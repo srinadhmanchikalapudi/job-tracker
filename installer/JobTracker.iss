@@ -65,6 +65,10 @@ Source: "{#SourceDir}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
+[UninstallDelete]
+; Written by the setup program when the person chose a folder for their applications (see [Code]).
+Type: files; Name: "{app}\install-defaults.json"
+
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
@@ -75,6 +79,102 @@ Filename: "{app}\{#AppExe}"; Description: "Start {#AppName}"; Flags: nowait post
 Filename: "{app}\{#AppExe}"; Flags: nowait runasoriginaluser; Check: RestartRequested
 
 [Code]
+// ---- Where the applications are saved ---------------------------------------------------------------------------------------------------
+// A wizard page asks for the folder (default: JobApplications on the Desktop). The choice is recorded in {app}\install-defaults.json, which
+// the program reads only until the person has a settings file of their own, and it can be changed any time in Settings (with an option to
+// move what is already saved). The page is skipped on updates and re-installs (the person has chosen already) and on silent installs, which
+// can pass /DATAROOT="D:\Jobs" instead. Nothing is written unless the folder differs from the default, so an all-users install does not
+// hand the installing person's Desktop to everyone.
+var
+  DataPage: TInputDirWizardPage;
+
+function DefaultDataRoot: string;
+begin
+  Result := ExpandConstant('{userdesktop}\JobApplications');
+end;
+
+function SettingsFile: string;
+begin
+  Result := ExpandConstant('{userappdata}\JobTracker\settings.json');
+end;
+
+function ParamDataRoot: string;
+begin
+  Result := Trim(ExpandConstant('{param:DATAROOT|}'));
+end;
+
+function JsonEscape(const S: string): string;
+begin
+  Result := S;
+  StringChangeEx(Result, '\', '\\', True);
+  StringChangeEx(Result, '"', '\"', True);
+end;
+
+function LooksLikeFullPath(const Path: string): Boolean;
+begin
+  Result := False;
+  if Length(Path) >= 3 then
+  begin
+    if (Path[2] = ':') and (Path[3] = '\') then
+      Result := True
+    else if Copy(Path, 1, 2) = '\\' then
+      Result := True;
+  end;
+end;
+
+procedure InitializeWizard;
+begin
+  DataPage := CreateInputDirPage(wpSelectDir,
+    'Where should your applications be saved?',
+    'Choose the folder for your job applications',
+    'Job Tracker keeps one folder per company here, with the job description and resume of every application. ' +
+    'The default is on your Desktop. You can change this later in Settings, and move what you have already saved.',
+    False, '');
+  DataPage.Add('');
+  DataPage.Values[0] := DefaultDataRoot;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if (DataPage <> nil) and (PageID = DataPage.ID) then
+    Result := (ParamDataRoot <> '') or FileExists(SettingsFile);
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if (DataPage <> nil) and (CurPageID = DataPage.ID) then
+  begin
+    if not LooksLikeFullPath(Trim(DataPage.Values[0])) then
+    begin
+      MsgBox('Please choose a full folder path, for example C:\Users\You\Documents\JobApplications.', mbError, MB_OK);
+      Result := False;
+    end;
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Root: string;
+  Lines: TArrayOfString;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    Root := ParamDataRoot;
+    if (Root = '') and (DataPage <> nil) and (not ShouldSkipPage(DataPage.ID)) then
+      Root := Trim(DataPage.Values[0]);
+
+    if (Root <> '') and (CompareText(Root, DefaultDataRoot) <> 0) then
+    begin
+      SetArrayLength(Lines, 1);
+      Lines[0] := '{"DataRoot": "' + JsonEscape(Root) + '"}';
+      SaveStringsToUTF8File(ExpandConstant('{app}\install-defaults.json'), Lines, False);
+    end;
+  end;
+end;
+
+// ---- Updates ----------------------------------------------------------------------------------------------------------------------------
 function RestartRequested: Boolean;
 begin
   Result := ExpandConstant('{param:RESTARTAPP|0}') = '1';

@@ -19,7 +19,7 @@
 <p align="center">
   <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4">
   <img alt="WPF" src="https://img.shields.io/badge/UI-WPF%20%28MVVM%29-0078D4">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-112%20passing-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-132%20passing-2EA043">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
   <a href="https://github.com/srinadhmanchikalapudi/job-tracker/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/srinadhmanchikalapudi/job-tracker?label=release"></a>
@@ -36,6 +36,7 @@ No technical knowledge needed. You need a Windows 10 or 11 PC.
 2. **Run it.** Open the file from your Downloads folder.
    - If Windows shows a blue **"Windows protected your PC"** screen, that is expected (the app is not code-signed yet). Click **More info**, then **Run anyway**.
    - Click **Next** through the installer, then **Finish**. It installs just for you and asks for no administrator password.
+   - One page asks **where your applications should be saved**. The default is a `JobApplications` folder on your Desktop; type or browse to another folder if you prefer. You can change it later in Settings.
 3. **Open Job Tracker** from the Start menu and click **New application**.
 
 It updates itself later: a bar appears at the top when a new version is out, and one click installs it. Your applications are never touched by an update or an uninstall.
@@ -75,7 +76,7 @@ Applying to jobs means tailoring a resume for each posting. A week later, when a
 | Keep a resume line for later | Hover the line and click the star. It appears under **Starred bullets** with its company and role. |
 | Copy a line into a new resume | Click the copy icon on the line, or **Copy** in Starred bullets. |
 | Open the folder in Explorer | **Open folder** on the application. |
-| Change where applications are saved | **Settings**, **Change…** (default: `Desktop\JobApplications`). |
+| Change where applications are saved | **Settings**, **Change…** (default: `Desktop\JobApplications`). Works any time, even with many applications saved: see [Changing the folder](#changing-the-folder). |
 
 ## Where your files go
 
@@ -89,6 +90,27 @@ JobApplications\
 ```
 
 These are plain text files. You can open and edit them in any editor, and the app picks the changes up. The folder is yours: uninstalling Job Tracker never deletes it. The app's own small settings file is in `%APPDATA%\JobTracker\settings.json`.
+
+## Changing the folder
+
+Where applications are saved is your choice, at three points:
+
+- **When installing:** the setup program has a page for it (default: `JobApplications` on your Desktop). It is skipped when you update or re-install, because you chose already.
+- **Any time later:** **Settings**, **Change…**. If you pick a folder that already holds other files (for example Documents), Job Tracker offers to create a `JobApplications` folder inside it so your applications stay together.
+- **With applications already saved:** Job Tracker asks whether to **move them** to the new folder or just **use the new folder** and leave the old ones where they are.
+  - Moving copies every application (job description, resume, notes, any extra files you added, and your starred bullets), checks that the copy matches, switches to the new folder, and only then removes the old files. If anything goes wrong before that, the copy is undone and nothing changes.
+  - If the new folder already holds an application with the same name, nothing is overwritten: the moved one is added next to it as `... (2)`.
+  - Switching back to a folder you used before brings its applications straight back.
+
+### Installing for other people
+
+A silent install can choose the folder up front, which is handy for sharing the app:
+
+```
+JobTracker-Setup-1.1.0.exe /VERYSILENT /DATAROOT="D:\Jobs"
+```
+
+`/DATAROOT` is a starting point for anyone who has no settings yet; people can still change it in Settings. A path may use environment variables, such as `%USERPROFILE%\Documents\Jobs`. If it is left out, each person gets `JobApplications` on their own Desktop.
 
 ## Updates and privacy
 
@@ -109,7 +131,7 @@ dotnet test                                 # all tests
 - `src/JobTracker.Core`: no UI. Folder naming, storage, job-page extraction and clean-up, search (`ISearchProvider`), the bullet library, and the update code.
 - `src/JobTracker.App`: the WPF shell (MVVM with CommunityToolkit.Mvvm). Colours come from the Fluent theme, so light and dark follow Windows.
 - `src/JobTracker.App/Assets/Logo.xaml` is the vector logo; `app.ico` and `logo.png` are rendered from it.
-- Environment variables for development: `JOBTRACKER_DATA_ROOT=<folder>` points the app at another data folder without changing your saved setting; `JOBTRACKER_NO_UPDATE_CHECK=1` skips the update check.
+- Environment variables for development: `JOBTRACKER_DATA_ROOT=<folder>` points the app at another data folder for one run without changing your saved setting; `JOBTRACKER_SETTINGS_FILE=<file>` keeps the settings file somewhere else (use it for tests, so they never change your real settings); `JOBTRACKER_NO_UPDATE_CHECK=1` skips the update check.
 - Search is plain keyword matching. `ISearchProvider` is the seam for a local semantic (embedding) search later.
 
 ## Releasing
