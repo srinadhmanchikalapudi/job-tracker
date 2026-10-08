@@ -1,0 +1,104 @@
+<Window x:Class="JobTracker.App.NewApplicationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="New application" Icon="Assets/app.ico" Height="760" Width="1060" MinWidth="760" MinHeight="520"
+        WindowStartupLocation="CenterOwner" FocusManager.FocusedElement="{Binding ElementName=JdBox}">
+    <Grid Margin="22,18,22,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+            <Image Source="{StaticResource LogoImage}" Width="34" Height="34" />
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="New application" FontSize="19" FontWeight="Bold" />
+                <TextBlock Style="{StaticResource SubtleText}" FontSize="12"
+                           Text="Paste the whole job page below. Company, role and link fill in on their own." />
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="16,12" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="160" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,10">
+                    <TextBlock Text="Company *" Margin="0,0,0,4" FontWeight="SemiBold" />
+                    <TextBox x:Name="CompanyBox" TextChanged="Fields_Changed" Padding="8,6" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,12,10">
+                    <TextBlock Text="Role *" Margin="0,0,0,4" FontWeight="SemiBold" />
+                    <TextBox x:Name="RoleBox" TextChanged="Fields_Changed" Padding="8,6" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,0,10">
+                    <TextBlock Text="Date applied" Margin="0,0,0,4" FontWeight="SemiBold" />
+                    <DatePicker x:Name="DateBox" SelectedDateChanged="DateBox_Changed" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="3">
+                    <TextBlock Text="Job link (optional)" Margin="0,0,0,4" FontWeight="SemiBold" />
+                    <TextBox x:Name="UrlBox" Padding="8,6" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Margin="0,0,0,6">
+                <ToggleButton x:Name="PreviewToggle" DockPanel.Dock="Right" Style="{StaticResource GhostToggle}" Padding="10,3"
+                              Content="Preview clean-up" Checked="PreviewToggle_Changed" Unchecked="PreviewToggle_Changed"
+                              ToolTip="See the job description as it will be saved" />
+                <TextBlock Text="Job description" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+            <Grid Grid.Row="1">
+                <TextBox x:Name="JdBox" AcceptsReturn="True" AcceptsTab="True" TextWrapping="Wrap" Padding="10"
+                         VerticalScrollBarVisibility="Auto" TextChanged="JdBox_TextChanged" />
+                <TextBox x:Name="PreviewBox" IsReadOnly="True" TextWrapping="Wrap" Padding="10" Visibility="Collapsed"
+                         VerticalScrollBarVisibility="Auto" />
+            </Grid>
+
+            <TextBlock Grid.Column="2" Text="Resume" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,0,6" />
+            <TextBox Grid.Column="2" Grid.Row="1" x:Name="ResumeBox" AcceptsReturn="True" AcceptsTab="True"
+                     TextWrapping="Wrap" Padding="10" VerticalScrollBarVisibility="Auto" />
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel VerticalAlignment="Center">
+                <CheckBox x:Name="CleanBox" IsChecked="True" Checked="CleanBox_Changed" Unchecked="CleanBox_Changed"
+                          Content="Remove page clutter (menus, buttons, footers) from the job description. The original is kept as jd.original.txt." />
+                <TextBlock x:Name="AutoFillNote" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{StaticResource AccentSolid}" />
+                <TextBlock x:Name="CleanupNote" Style="{StaticResource SubtleText}" Margin="0,2,0,0" />
+                <TextBlock x:Name="FolderNote" Style="{StaticResource SubtleText}" Margin="0,2,0,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                <Button Style="{StaticResource GhostButton}" Content="Cancel" Padding="18,8" IsCancel="True" />
+                <Button x:Name="SaveButton" Style="{StaticResource PrimaryButton}" Content="Save application" Margin="10,0,0,0"
+                        Padding="22,8" IsEnabled="False" Click="Save_Click" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

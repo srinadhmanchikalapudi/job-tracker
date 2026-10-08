@@ -1,0 +1,221 @@
+<Application x:Class="JobTracker.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:JobTracker.App"
+             ThemeMode="System"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Assets/Logo.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <local:InitialConverter x:Key="Initial" />
+            <local:CompanyBrushConverter x:Key="CompanyBrush" />
+
+            <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+            <!-- Alpha-based neutrals so cards, borders and highlights read on both the light and dark theme. -->
+            <LinearGradientBrush x:Key="AccentBrush" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#6366F1" Offset="0" />
+                <GradientStop Color="#2563EB" Offset="1" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="AccentSolid" Color="#6366F1" />
+            <SolidColorBrush x:Key="AccentSoft" Color="#206366F1" />
+            <SolidColorBrush x:Key="AccentBorder" Color="#806366F1" />
+            <SolidColorBrush x:Key="CardBrush" Color="#10808080" />
+            <SolidColorBrush x:Key="CardBorderBrush" Color="#2A808080" />
+            <SolidColorBrush x:Key="MatchBrush" Color="#55F5C242" />
+            <SolidColorBrush x:Key="StarBrush" Color="#F5A524" />
+            <SolidColorBrush x:Key="DividerBrush" Color="#2A808080" />
+
+            <Style x:Key="SubtleText" TargetType="TextBlock">
+                <Setter Property="Opacity" Value="0.62" />
+            </Style>
+
+            <Style x:Key="Icon" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="Card" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource CardBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="16" />
+            </Style>
+
+            <Style x:Key="PrimaryButton" TargetType="Button">
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Padding" Value="16,8" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome" Background="{StaticResource AccentBrush}" CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.9" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.75" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.4" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="GhostButton" TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Padding" Value="12,7" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome" Background="Transparent" BorderBrush="{StaticResource CardBorderBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentSoft}" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBorder}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.7" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.4" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Same chrome as GhostButton for the whole-application star toggle. -->
+            <Style x:Key="GhostToggle" TargetType="ToggleButton">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Padding" Value="12,7" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Chrome" Background="Transparent" BorderBrush="{StaticResource CardBorderBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentSoft}" />
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#26F5A524" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource StarBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Per-line star: outline until starred. Glyphs are Segoe Fluent Icons (E734 outline star, E735 filled). -->
+            <Style x:Key="StarButton" TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+                <Setter Property="Content" Value="&#xE734;" />
+                <Setter Property="ToolTip" Value="Star this line to save it in your bullet library" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="Width" Value="30" />
+                <Setter Property="Height" Value="28" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsStarred}" Value="True">
+                        <Setter Property="Content" Value="&#xE735;" />
+                        <Setter Property="Foreground" Value="{StaticResource StarBrush}" />
+                        <Setter Property="ToolTip" Value="Starred. Click to remove from your bullet library" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="IconButton" TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Width" Value="30" />
+                <Setter Property="Height" Value="28" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+
+            <!-- Rounded status chip. The DataContext must expose Status (an ApplicationStatus). -->
+            <Style x:Key="StatusPill" TargetType="Border">
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="Padding" Value="9,2" />
+                <Setter Property="Background" Value="#263B82F6" />
+                <Setter Property="TextElement.Foreground" Value="#3B82F6" />
+                <Setter Property="TextElement.FontSize" Value="12" />
+                <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Status}" Value="Interviewing">
+                        <Setter Property="Background" Value="#26F59E0B" />
+                        <Setter Property="TextElement.Foreground" Value="#D97706" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="Offer">
+                        <Setter Property="Background" Value="#2616A34A" />
+                        <Setter Property="TextElement.Foreground" Value="#16A34A" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="Rejected">
+                        <Setter Property="Background" Value="#26DC2626" />
+                        <Setter Property="TextElement.Foreground" Value="#DC2626" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="Withdrawn">
+                        <Setter Property="Background" Value="#266B7280" />
+                        <Setter Property="TextElement.Foreground" Value="#6B7280" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Application list rows as soft cards. -->
+            <Style x:Key="AppListItem" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="10,8" />
+                <Setter Property="Margin" Value="0,2" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Row" Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
+                                    CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Row" Property="Background" Value="{StaticResource CardBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Row" Property="Background" Value="{StaticResource AccentSoft}" />
+                                    <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource AccentBorder}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

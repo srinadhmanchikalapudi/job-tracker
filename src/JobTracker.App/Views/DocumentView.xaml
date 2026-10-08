@@ -1,0 +1,124 @@
+<UserControl x:Class="JobTracker.App.Views.DocumentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Style="{StaticResource GhostButton}" Command="{Binding EditCommand}"
+                        Visibility="{Binding IsViewing, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE70F;" Margin="0,0,8,0" />
+                        <TextBlock Text="Edit" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}"
+                        Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" Margin="0,0,8,0" />
+                        <TextBlock Text="Save" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource GhostButton}" Content="Cancel" Margin="8,0,0,0"
+                        Command="{Binding CancelCommand}"
+                        Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
+            <TextBlock Style="{StaticResource SubtleText}" VerticalAlignment="Center" Margin="14,0,0,0"
+                       TextTrimming="CharacterEllipsis"
+                       Visibility="{Binding IsViewing, Converter={StaticResource BoolToVis}}"
+                       Text="Hover a line to star it into your bullet library or copy it." />
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding IsViewing, Converter={StaticResource BoolToVis}}">
+                <ItemsControl ItemsSource="{Binding Lines}" Margin="0,0,8,16">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Row" CornerRadius="6" Padding="0,1" Margin="0,1">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMatch}" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource MatchBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Blank">
+                                                <Setter Property="Height" Value="8" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Heading">
+                                                <Setter Property="Margin" Value="0,10,0,2" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+
+                                <Grid Margin="{Binding IndentMargin}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="•" Foreground="{StaticResource AccentSolid}" FontWeight="Bold"
+                                               VerticalAlignment="Top" Margin="6,3,8,0" Visibility="Collapsed" x:Name="Dot" />
+
+                                    <TextBox Grid.Column="1" x:Name="Body" Text="{Binding Display, Mode=OneWay}" IsReadOnly="True"
+                                             TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Padding="6,3,0,3"
+                                             VerticalAlignment="Top" />
+
+                                    <!-- Actions on the right: star stays visible once starred; both show on hover. -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,2,0"
+                                                Visibility="{Binding IsActionable, Converter={StaticResource BoolToVis}}">
+                                        <Button x:Name="CopyBtn" Style="{StaticResource IconButton}" Content="&#xE8C8;" Opacity="0"
+                                                ToolTip="Copy this line without its leading dash"
+                                                Command="{Binding CopyCommand}" />
+                                        <Button x:Name="StarBtn" Style="{StaticResource StarButton}" Opacity="0"
+                                                Command="{Binding ToggleStarCommand}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <DataTemplate.Triggers>
+                                <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="StarBtn" Property="Opacity" Value="1" />
+                                    <Setter TargetName="CopyBtn" Property="Opacity" Value="1" />
+                                </Trigger>
+                                <DataTrigger Binding="{Binding IsStarred}" Value="True">
+                                    <Setter TargetName="StarBtn" Property="Opacity" Value="1" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="Bullet">
+                                    <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                                    <Setter TargetName="Body" Property="Padding" Value="0,3,0,3" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="Heading">
+                                    <Setter TargetName="Body" Property="FontSize" Value="16" />
+                                    <Setter TargetName="Body" Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="Blank">
+                                    <Setter TargetName="Body" Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,40"
+                        Visibility="{Binding ShowEmptyHint, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE8A5;" FontSize="34" Opacity="0.35"
+                           HorizontalAlignment="Center" Margin="0,0,0,8" />
+                <TextBlock Style="{StaticResource SubtleText}" HorizontalAlignment="Center"
+                           Text="Nothing saved here yet. Click Edit to paste it." />
+            </StackPanel>
+
+            <TextBox Text="{Binding EditText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" AcceptsTab="True"
+                     TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="10"
+                     Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}" />
+        </Grid>
+    </Grid>
+</UserControl>
