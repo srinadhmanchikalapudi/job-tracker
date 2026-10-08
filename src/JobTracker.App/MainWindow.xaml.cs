@@ -19,6 +19,19 @@ public partial class MainWindow : Window
         Loaded += async (_, _) => await _vm.StartupUpdateCheckAsync();
     }
 
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        // Quitting while applications are being copied would leave a half-written copy behind (the originals are safe, but it is untidy).
+        if (_vm.IsMovingFiles)
+        {
+            e.Cancel = true;
+            MessageBox.Show(this, "Job Tracker is still moving your applications. Please wait until it finishes.", "Job Tracker",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        base.OnClosing(e);
+    }
+
     private void NewApplication_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new NewApplicationWindow { Owner = this };
