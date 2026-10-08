@@ -46,6 +46,13 @@ internal sealed class TempDir : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(Path, recursive: true); } catch (IOException) { }
+        try
+        {
+            // Some tests make read-only files, which a plain recursive delete refuses to remove.
+            foreach (var file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
+                File.SetAttributes(file, FileAttributes.Normal);
+            Directory.Delete(Path, recursive: true);
+        }
+        catch (IOException) { }
     }
 }
