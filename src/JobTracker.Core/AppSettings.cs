@@ -9,14 +9,14 @@ public sealed class AppSettings
     /// <summary>Dev/testing override: points the app at another data folder without touching the saved setting.</summary>
     public const string DataRootEnvVar = "JOBTRACKER_DATA_ROOT";
 
-    private string _dataRoot = DefaultDataRoot();
+    private string? _dataRoot;
 
     // Set while the environment override is in effect, so saving writes the user's real folder, not the override.
     private string? _persistedDataRoot;
 
     public string DataRoot
     {
-        get => _dataRoot;
+        get => _dataRoot ??= DefaultDataRoot();
         set
         {
             _dataRoot = value;
@@ -29,8 +29,18 @@ public sealed class AppSettings
 
     public DateTime? LastUpdateCheck { get; set; }
 
-    public static string DefaultDataRoot() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "JobApplications");
+    /// <summary>The version whose "What's new" the person has been shown, so each update is announced once.</summary>
+    public string? LastSeenVersion { get; set; }
+
+    /// <summary>True when there was no settings file yet, which is a brand-new install (not saved).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsFirstRun { get; private set; }
+
+    /// <summary>
+    /// Where applications go when nothing was chosen: an existing JobApplications folder in Documents or on the Desktop, otherwise Documents when
+    /// OneDrive syncs it (so the applications survive a damaged profile or a Windows reset), otherwise the Desktop.
+    /// </summary>
+    public static string DefaultDataRoot() => DataLocations.Recommended(new WindowsKnownFolders(), new OneDriveLocator());
 
     /// <summary>Dev/testing override: keeps the settings file somewhere else so a test run never changes the real one.</summary>
     public const string SettingsFileEnvVar = "JOBTRACKER_SETTINGS_FILE";
@@ -50,6 +60,7 @@ public sealed class AppSettings
     {
         var file = path ?? DefaultPath();
         var settings = AtomicFile.ReadJson<AppSettings>(file) ?? new AppSettings();
+        settings.IsFirstRun = !File.Exists(file);
         if (string.IsNullOrWhiteSpace(settings.DataRoot))
             settings.DataRoot = DefaultDataRoot();
 
@@ -77,6 +88,7 @@ public sealed class AppSettings
             DataRoot = _persistedDataRoot ?? DataRoot,
             CheckForUpdates = CheckForUpdates,
             LastUpdateCheck = LastUpdateCheck,
+            LastSeenVersion = LastSeenVersion,
         };
         AtomicFile.WriteJson(path ?? DefaultPath(), toSave);
     }

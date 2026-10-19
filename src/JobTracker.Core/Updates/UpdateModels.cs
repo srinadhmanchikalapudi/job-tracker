@@ -8,7 +8,8 @@ namespace JobTracker.Core.Updates;
 /// <param name="PageUrl">The release's web page, where the files can be downloaded by hand.</param>
 /// <param name="InstallerUrl">The setup program attached to the release, or null if there is none.</param>
 /// <param name="InstallerSha256">The SHA-256 GitHub reports for the setup program (lower case hex), or null if it reports none.</param>
-public sealed record UpdateInfo(Version Version, string Tag, string PageUrl, string? InstallerUrl, string? InstallerSha256);
+/// <param name="Notes">The release's notes as GitHub holds them (its body), or null.</param>
+public sealed record UpdateInfo(Version Version, string Tag, string PageUrl, string? InstallerUrl, string? InstallerSha256, string? Notes = null);
 
 public enum UpdateStatus { UpToDate, Available, Failed }
 

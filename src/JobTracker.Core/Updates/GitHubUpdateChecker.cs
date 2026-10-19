@@ -73,7 +73,7 @@ public sealed class GitHubUpdateChecker(HttpClient http, string owner, string re
         }
 
         var page = Text(release, "html_url") ?? $"https://github.com/{owner}/{repo}/releases/latest";
-        return UpdateCheckResult.Available(new UpdateInfo(version, tag!, page, url, sha));
+        return UpdateCheckResult.Available(new UpdateInfo(version, tag!, page, url, sha, Text(release, "body")));
     }
 
     private static string? Text(JsonElement element, string name) =>
