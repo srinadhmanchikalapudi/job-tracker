@@ -7,7 +7,7 @@ starred bullets and in-app updates from GitHub Releases. Read `README.md` for th
 
 ```
 dotnet run --project src/JobTracker.App
-dotnet test                                  # all tests (158 at last count)
+dotnet test                                  # all tests (189 at last count)
 dotnet build JobTracker.slnx -c Release      # use -c Release when the user has the Debug exe running
 powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Version 1.0.0 -Installer
 ```
@@ -27,6 +27,8 @@ powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Version 1.0.0 -Insta
 - **Never change the installer `AppId`** (`installer\JobTracker.iss`) or `InstallationInfo.UninstallKey`; they must match.
 - **Styles on themed controls need an explicit `Foreground`** (`{DynamicResource TextFillColorPrimaryBrush}`) when they replace the template, or dark mode shows black text. Use alpha-based brushes for cards and highlights so both themes read.
 - **Keep user-visible wording plain** (no internals). No real names, resumes or paths in samples, tests, screenshots or docs; use invented data.
+- **Every release needs a section in `src/JobTracker.Core/WhatsNew.md`** (`## 1.4.0`, one `- line` per change, written for users, no commit-speak). It is embedded in the app (What's new), becomes the GitHub release notes, and `tools/publish.ps1` refuses to build a version without one. Write it before tagging.
+- **The default data folder is smart** (`DataLocations.Recommended`): an existing `JobApplications` in Documents or on the Desktop wins, otherwise Documents if OneDrive syncs it, otherwise the Desktop. Never move anyone's existing data behind their back. The installer page makes the same suggestion (keep the two in step).
 - **Moving the data folder must never lose data** (`DataRootMover`): copy everything, verify, switch the setting, and only then delete the originals; roll the copies back on any failure. Keep the rollback tests passing. The installer's folder page only writes `install-defaults.json` when the choice differs from the Desktop default (so an all-users install does not hand one person's Desktop to everyone).
 - Environment variables: `JOBTRACKER_DATA_ROOT` (another data folder for this run only; never saved), `JOBTRACKER_SETTINGS_FILE` (another settings file: **always set it when a script or test saves settings**, or it changes the real one) and `JOBTRACKER_NO_UPDATE_CHECK=1`.
 - Tooling on this machine: in the Bash tool, heredocs containing apostrophes fail; write files with the file tool or a script file.

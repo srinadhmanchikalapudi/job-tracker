@@ -19,7 +19,7 @@
 <p align="center">
   <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4">
   <img alt="WPF" src="https://img.shields.io/badge/UI-WPF%20%28MVVM%29-0078D4">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-158%20passing-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-189%20passing-2EA043">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
   <a href="https://github.com/srinadhmanchikalapudi/job-tracker/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/srinadhmanchikalapudi/job-tracker?label=release"></a>
@@ -50,6 +50,8 @@ Applying to jobs means tailoring a resume for each posting. A week later, when a
 - **Paste, don't type.** Copy the whole job page (Ctrl+A, Ctrl+C) and paste it in. Company, role and link fill in on their own.
 - **Clean job descriptions.** Menus, buttons, "Similar jobs" lists and cookie banners are removed. Headings, bullets and blank lines stay exactly as pasted. A preview shows the result first, and the original is kept as `jd.original.txt`.
 - **Full-time and contract, kept apart.** Tabs above the applications (All, Full-time, Contract, each with a count) separate the two kinds. Choose the type when you add an application: it is filled in for you when the posting says "Contract", and it starts as the tab you are on. You can change it later, and the application moves to the other tab.
+- **Backed up by OneDrive.** Settings tells you whether your applications are in OneDrive, and moves them there in one click if they are not. With Documents synced to OneDrive, a new install saves there by default, so a damaged profile or a Windows reset does not take your applications with it.
+- **See what changed, inside the app.** **What's new** is on the update bar and in Settings, and it opens by itself once after each update. No need to visit GitHub.
 - **One folder per application**, easy to find in Explorer: `JobApplications\<Company>\<date>_<Role>\`.
 - **Search by keyword** inside job descriptions, resumes, or both. Every word must appear, and matching lines are highlighted.
 - **Star the lines you want to reuse.** Hover any line to star it into your bullet library, or copy it (the leading dash is dropped). The **Starred bullets** tab is a searchable library of your best resume lines.
@@ -97,12 +99,20 @@ These are plain text files. You can open and edit them in any editor, and the ap
 
 Where applications are saved is your choice, at three points:
 
-- **When installing:** the setup program has a page for it (default: `JobApplications` on your Desktop). It is skipped when you update or re-install, because you chose already.
+- **When installing:** the setup program has a page for it. The suggestion is a `JobApplications` folder that already exists, otherwise **Documents when OneDrive syncs it** (so your applications are backed up), otherwise your Desktop. It is skipped when you update or re-install, because you chose already.
 - **Any time later:** **Settings**, **Change…**. If you pick a folder that already holds other files (for example Documents), Job Tracker offers to create a `JobApplications` folder inside it so your applications stay together.
 - **With applications already saved:** Job Tracker asks whether to **move them** to the new folder or just **use the new folder** and leave the old ones where they are.
   - Moving copies every application (job description, resume, notes, any extra files you added, and your starred bullets), checks that the copy matches, switches to the new folder, and only then removes the old files. If anything goes wrong before that, the copy is undone and nothing changes.
   - If the new folder already holds an application with the same name, nothing is overwritten: the moved one is added next to it as `... (2)`.
   - Switching back to a folder you used before brings its applications straight back.
+
+### Backup with OneDrive
+
+Job Tracker does not copy files anywhere itself: it keeps your applications in one folder, and **a folder inside OneDrive is backed up by OneDrive**. **Settings** shows which case you are in:
+
+- **Backed up by OneDrive** (green): your applications are inside a OneDrive folder. If your profile is damaged or Windows is reset, sign in to OneDrive again and they come back. After a reinstall, Job Tracker looks in `Documents\JobApplications` and `Desktop\JobApplications` for existing applications before it picks a default, so it finds them again by itself. (A folder you chose elsewhere needs choosing again in Settings.)
+- **In OneDrive, but OneDrive is not running**: start OneDrive so your changes are uploaded.
+- **Only on this PC**: if you have OneDrive, **Move to OneDrive** moves your applications into `Documents\JobApplications` (or the OneDrive folder, if Documents is not synced). It uses the same safe move as above.
 
 ### Installing for other people
 
@@ -113,6 +123,10 @@ JobTracker-Setup-1.1.0.exe /VERYSILENT /DATAROOT="D:\Jobs"
 ```
 
 `/DATAROOT` is a starting point for anyone who has no settings yet; people can still change it in Settings. A path may use environment variables, such as `%USERPROFILE%\Documents\Jobs`. If it is left out, each person gets `JobApplications` on their own Desktop.
+
+## What's new
+
+Open **What's new** from the update bar (it shows the waiting version's notes before you install), or from **Settings** (every version, newest first, even offline: the notes of the installed versions are part of the app). After an update, it opens by itself once. The notes live in `src/JobTracker.Core/WhatsNew.md`, written for the people who use the app.
 
 ## Updates and privacy
 
@@ -141,8 +155,9 @@ dotnet test                                 # all tests
 Releases are built by GitHub Actions, as in the author's other project, [Interview Coach](https://github.com/srinadhmanchikalapudi/interview-coach).
 
 1. Make sure `main` is green in CI and everything is committed.
-2. Tag and push: `git tag -a v1.0.1 -m "Summary"` then `git push origin v1.0.1`.
-3. The **Release** workflow tests the code, builds the single-file exe, a zip and the Inno Setup installer, and publishes them with notes made from the commit subjects since the previous tag.
+2. Add a section for the version to `src/JobTracker.Core/WhatsNew.md` (`## 1.0.1`, then a `- line` per change, written for users). `tools/publish.ps1` refuses to build a version without one. Commit it.
+3. Tag and push: `git tag -a v1.0.1 -m "Summary"` then `git push origin v1.0.1`.
+4. The **Release** workflow tests the code, builds the single-file exe, a zip and the Inno Setup installer, and publishes them with the notes from `WhatsNew.md` (or, for a version without a section, the commit subjects since the previous tag).
 
 To build the installer locally: `winget install JRSoftware.InnoSetup`, then `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Version 1.0.0 -Installer`. The output is in `dist\`.
 
