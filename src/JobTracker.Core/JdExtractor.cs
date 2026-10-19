@@ -3,7 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace JobTracker.Core;
 
-public sealed record ExtractedJob(string? Company, string? Role, string? Url);
+/// <param name="JobType">Contract or full-time when the posting clearly says so; null when it does not (or says both).</param>
+public sealed record ExtractedJob(string? Company, string? Role, string? Url, JobType? JobType = null);
 
 /// <summary>
 /// Best-effort guess of company, role and link from a pasted job page. Purely local pattern matching:
@@ -36,6 +37,20 @@ public static class JdExtractor
         @",\s*[A-Z]{2}\b|\b(remote|hybrid|on-?site|united states|full-?time|part-?time|contract|applicants?|ago|posted|apply|save|share|promoted|reposted)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // The job type is only called when the posting says so plainly. Words like "contractor" in the body are not evidence.
+    private static readonly Regex JobTypeLabel = new(@"^(?:employment|job|position|work)\s*type\s*[:\-–]\s*(?<v>.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex JobTypeLabelAlone = new(@"^(?:employment|job|position|work)\s*type\s*:?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex ContractWord = new(@"\b(contract|contractor|c2c|corp[- ]to[- ]corp|1099|temporary|temp)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex FullTimeWord = new(@"\b(full[- ]?time|permanent|fte|direct[- ]hire)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex ContractPhrase = new(
+        @"\b(c2c|corp[- ]to[- ]corp|1099|contract[- ]to[- ]hire|w-?2\s+contract)\b|\b\d+[- ]?(month|mo|week)s?\s+contract\b|\bcontract\s+(position|role|opportunity|assignment|engagement|basis)\b|\b(this\s+is\s+a|a)\s+contract\s+(job|position|role)\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    // "Seattle, WA · Contract · Mid-Senior level": the word as its own segment of a short line.
+    private static readonly Regex ContractSegment = new(@"(^|[·•|,]\s*)contract(\s*[·•|,]|\s*$)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex FullTimeSegment = new(@"(^|[·•|,]\s*)full[- ]?time(\s*[·•|,]|\s*$)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private static readonly string[] AboutIgnore = ["the ", "this ", "us", "you", "our "];
 
     private static readonly string[] Aggregators =
@@ -60,7 +75,38 @@ public static class JdExtractor
                       ?? (uri is null ? null : CompanyFromUrl(uri))
                       ?? CompanyAfterTitle(lines, roleIndex);
 
-        return new ExtractedJob(Clean(company), Clean(role), url);
+        return new ExtractedJob(Clean(company), Clean(role), url, DetectJobType(lines));
+    }
+
+    /// <summary>
+    /// Contract or full-time, from a "Job type:" line, or from plain signs near the top of the page (a "Contract" segment, "C2C", "1099",
+    /// "6 month contract"). Null when there is no clear sign, or when the posting names both.
+    /// </summary>
+    public static JobType? DetectJobType(IReadOnlyList<string> lines)
+    {
+        for (var i = 0; i < Math.Min(lines.Count, AboutScanLines); i++)
+        {
+            string? value = null;
+            if (JobTypeLabel.Match(lines[i]) is { Success: true } labelled)
+                value = labelled.Groups["v"].Value;
+            else if (JobTypeLabelAlone.IsMatch(lines[i]) && i + 1 < lines.Count)
+                value = lines[i + 1]; // Indeed shows the label on one line and the value on the next
+
+            if (value is null)
+                continue;
+            var contract = ContractWord.IsMatch(value);
+            var fullTime = FullTimeWord.IsMatch(value);
+            if (contract == fullTime)
+                return null; // names both (or neither): do not guess
+            return contract ? JobType.Contract : JobType.FullTime;
+        }
+
+        var head = lines.Take(LabelScanLines).Where(l => l.Length <= 120).ToList();
+        var signalsContract = head.Any(l => ContractPhrase.IsMatch(l) || ContractSegment.IsMatch(l));
+        var signalsFullTime = head.Any(l => FullTimeSegment.IsMatch(l));
+        if (signalsContract == signalsFullTime)
+            return null;
+        return signalsContract ? JobType.Contract : JobType.FullTime;
     }
 
     /// <summary>Chrome and Edge put "SourceURL:https://..." in the HTML clipboard header when you copy part of a page.</summary>

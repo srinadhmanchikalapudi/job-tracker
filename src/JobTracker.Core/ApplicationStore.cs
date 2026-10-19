@@ -27,6 +27,7 @@ public sealed class ApplicationStore(string root)
             Role = input.Role.Trim(),
             Url = string.IsNullOrWhiteSpace(input.Url) ? null : input.Url.Trim(),
             AppliedDate = date,
+            JobType = input.JobType,
         };
 
         Directory.CreateDirectory(folder);

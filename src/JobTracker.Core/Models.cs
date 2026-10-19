@@ -9,6 +9,18 @@ public enum ApplicationStatus
     Withdrawn,
 }
 
+/// <summary>Whether the job is a permanent role or a contract. Full-time is the default, so applications saved before this existed stay in it.</summary>
+public enum JobType
+{
+    FullTime,
+    Contract,
+}
+
+public static class JobTypeExtensions
+{
+    public static string Label(this JobType type) => type == JobType.Contract ? "Contract" : "Full-time";
+}
+
 public enum SearchScope
 {
     Both,
@@ -31,6 +43,7 @@ public sealed class ApplicationMeta
     public DateOnly AppliedDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public ApplicationStatus Status { get; set; } = ApplicationStatus.Applied;
     public bool Starred { get; set; }
+    public JobType JobType { get; set; } = JobType.FullTime;
 }
 
 /// <summary>An application folder on disk plus its metadata. Text files are read on demand.</summary>
@@ -52,7 +65,8 @@ public sealed record NewApplication(
     string ResumeText,
     string? Url = null,
     DateOnly? AppliedDate = null,
-    string? OriginalJd = null);
+    string? OriginalJd = null,
+    JobType JobType = JobType.FullTime);
 
 public sealed record SearchHit(JobApplication Application, BulletSource Source, int LineNumber, string Text);
 
