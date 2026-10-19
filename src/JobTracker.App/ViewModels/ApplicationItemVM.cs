@@ -43,6 +43,23 @@ public sealed partial class ApplicationItemVM : ObservableObject
         }
     }
 
+    public JobType JobType
+    {
+        get => App.Meta.JobType;
+        set
+        {
+            if (App.Meta.JobType == value)
+                return;
+            App.Meta.JobType = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsContract));
+            Main.Try(() => Main.Store.SaveMeta(App));
+            Main.JobTypeChanged(this);
+        }
+    }
+
+    public bool IsContract => App.Meta.JobType == JobType.Contract;
+
     public bool IsStarred
     {
         get => App.Meta.Starred;

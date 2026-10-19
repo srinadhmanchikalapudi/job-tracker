@@ -25,6 +25,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="150" />
                     <ColumnDefinition Width="160" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -40,11 +41,16 @@
                     <TextBlock Text="Role *" Margin="0,0,0,4" FontWeight="SemiBold" />
                     <TextBox x:Name="RoleBox" TextChanged="Fields_Changed" Padding="8,6" />
                 </StackPanel>
-                <StackPanel Grid.Column="2" Margin="0,0,0,10">
+                <StackPanel Grid.Column="2" Margin="0,0,12,10">
+                    <TextBlock Text="Job type" Margin="0,0,0,4" FontWeight="SemiBold" />
+                    <ComboBox x:Name="JobTypeBox" HorizontalAlignment="Stretch" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectionChanged="JobTypeBox_Changed" ToolTip="Full-time or contract. It decides which tab the application appears on." />
+                </StackPanel>
+                <StackPanel Grid.Column="3" Margin="0,0,0,10">
                     <TextBlock Text="Date applied" Margin="0,0,0,4" FontWeight="SemiBold" />
                     <DatePicker x:Name="DateBox" SelectedDateChanged="DateBox_Changed" />
                 </StackPanel>
-                <StackPanel Grid.Row="1" Grid.ColumnSpan="3">
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="4">
                     <TextBlock Text="Job link (optional)" Margin="0,0,0,4" FontWeight="SemiBold" />
                     <TextBox x:Name="UrlBox" Padding="8,6" />
                 </StackPanel>

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using JobTracker.App.ViewModels;
 using JobTracker.Core;
 
 namespace JobTracker.App;
@@ -13,10 +14,16 @@ public partial class NewApplicationWindow : Window
     private string? _autoUrl;
     private string? _sourceUrl;
 
-    public NewApplicationWindow()
+    // Set once the person picks a type themselves, after which the pasted page no longer changes it.
+    private bool _jobTypeChosenByUser;
+    private bool _settingJobType;
+
+    public NewApplicationWindow(JobType initialJobType = JobType.FullTime)
     {
         InitializeComponent();
         DateBox.SelectedDate = DateTime.Today;
+        JobTypeBox.ItemsSource = MainViewModel.JobTypeOptions;
+        SetJobType(initialJobType);
         DataObject.AddPastingHandler(JdBox, JdBox_Pasting);
     }
 
@@ -38,11 +45,31 @@ public partial class NewApplicationWindow : Window
         if (Fill(CompanyBox, found.Company, ref _autoCompany)) filled.Add("company");
         if (Fill(RoleBox, found.Role, ref _autoRole)) filled.Add("role");
         if (Fill(UrlBox, found.Url, ref _autoUrl)) filled.Add("link");
+        if (!_jobTypeChosenByUser && found.JobType is { } detected && detected != SelectedJobType)
+        {
+            SetJobType(detected);
+            filled.Add("job type");
+        }
 
         if (filled.Count > 0)
             AutoFillNote.Text = $"Filled {string.Join(", ", filled)} from the job description. Please check.";
 
         RefreshCleanup();
+    }
+
+    private JobType SelectedJobType => JobTypeBox.SelectedValue is JobType type ? type : JobType.FullTime;
+
+    private void SetJobType(JobType type)
+    {
+        _settingJobType = true;
+        JobTypeBox.SelectedValue = type;
+        _settingJobType = false;
+    }
+
+    private void JobTypeBox_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_settingJobType)
+            _jobTypeChosenByUser = true;
     }
 
     private static bool Fill(TextBox box, string? value, ref string? lastAuto)
@@ -109,7 +136,8 @@ public partial class NewApplicationWindow : Window
             ResumeBox.Text,
             UrlBox.Text,
             DateOnly.FromDateTime(DateBox.SelectedDate ?? DateTime.Today),
-            OriginalJd: jd == raw ? null : raw);
+            OriginalJd: jd == raw ? null : raw,
+            JobType: SelectedJobType);
         DialogResult = true;
     }
 }

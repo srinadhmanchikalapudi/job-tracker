@@ -19,6 +19,8 @@ public sealed partial class MainViewModel : ObservableObject
     public static IReadOnlyList<ApplicationStatus> Statuses { get; } = Enum.GetValues<ApplicationStatus>();
     public static IReadOnlyList<SearchScope> Scopes { get; } = Enum.GetValues<SearchScope>();
     public static IReadOnlyList<string> StatusFilterOptions { get; } = [AnyStatus, .. Enum.GetNames<ApplicationStatus>()];
+    public static IReadOnlyList<JobTypeOption> JobTypeOptions { get; } =
+        [new JobTypeOption("Full-time", JobType.FullTime), new JobTypeOption("Contract", JobType.Contract)];
     public static IReadOnlyList<string> SourceFilterOptions { get; } = [AllSources, nameof(BulletSource.Jd), nameof(BulletSource.Resume)];
 
     private readonly AppSettings _settings;
@@ -38,6 +40,9 @@ public sealed partial class MainViewModel : ObservableObject
         ApplicationsView = CollectionViewSource.GetDefaultView(Applications);
         ApplicationsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ApplicationItemVM.Company)));
 
+        JobTypeTabs = [new JobTypeTab(null, "All"), new JobTypeTab(JobType.FullTime, "Full-time"), new JobTypeTab(JobType.Contract, "Contract")];
+        _selectedJobTypeTab = JobTypeTabs[0];
+
         _toastTimer.Tick += (_, _) =>
         {
             _toastTimer.Stop();
@@ -53,6 +58,25 @@ public sealed partial class MainViewModel : ObservableObject
     public ObservableCollection<ApplicationItemVM> Applications { get; } = [];
     public ICollectionView ApplicationsView { get; }
     public ObservableCollection<BulletVM> StarredBullets { get; } = [];
+
+    /// <summary>The tabs above the applications. Each application is either full-time or contract.</summary>
+    public IReadOnlyList<JobTypeTab> JobTypeTabs { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAllJobTypes))]
+    private JobTypeTab _selectedJobTypeTab = null!;
+
+    public bool IsAllJobTypes => SelectedJobTypeTab.Type is null;
+
+    // What the right-hand pane says when nothing is selected: true to why the list is empty.
+    [ObservableProperty] private string _emptyTitle = "No applications yet";
+    [ObservableProperty] private string _emptyHint = "Paste a job page and your resume, and they are saved to a folder for you.";
+    [ObservableProperty] private string _emptyButton = "Add your first application";
+
+    /// <summary>A new application starts as the kind the person is looking at (Full-time when on the All tab).</summary>
+    public JobType DefaultNewJobType => SelectedJobTypeTab.Type ?? JobType.FullTime;
+
+    private JobTypeTab TabFor(JobType type) => JobTypeTabs.First(t => t.Type == type);
 
     [ObservableProperty] private string _dataRoot = "";
     [ObservableProperty] private string _searchText = "";
@@ -90,6 +114,12 @@ public sealed partial class MainViewModel : ObservableObject
                              (Scope == SearchScope.Resume && source == BulletSource.Resume));
 
     partial void OnSelectedChanged(ApplicationItemVM? value) => value?.LoadDetail();
+
+    partial void OnSelectedJobTypeTabChanged(JobTypeTab value)
+    {
+        if (value is not null)
+            ApplyFilters();
+    }
 
     partial void OnSearchTextChanged(string value) => ScheduleFilter();
     partial void OnScopeChanged(SearchScope value) => ApplyFilters();
@@ -145,6 +175,9 @@ public sealed partial class MainViewModel : ObservableObject
         if (item is null)
             return;
 
+        if (!Applications.Contains(item) && SelectedJobTypeTab.Type is not null && SelectedJobTypeTab.Type != item.JobType)
+            SelectedJobTypeTab = TabFor(item.JobType); // it belongs on the other tab: go there rather than leaving the tab
+
         if (!Applications.Contains(item))
         {
             // Hidden by the current filters, so clear them to make it visible.
@@ -155,6 +188,31 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         Selected = item;
+    }
+
+    /// <summary>
+    /// An application was switched between Full-time and Contract. Follow it to its new tab so it stays in front of the person,
+    /// and keep the counts right.
+    /// </summary>
+    public void JobTypeChanged(ApplicationItemVM item)
+    {
+        ShowToast($"Moved to {item.JobType.Label()}");
+        if (SelectedJobTypeTab.Type is not null && SelectedJobTypeTab.Type != item.JobType)
+        {
+            SelectedJobTypeTab = TabFor(item.JobType);
+            if (Applications.Contains(item))
+                Selected = item;
+        }
+        else
+        {
+            UpdateJobTypeCounts();
+        }
+    }
+
+    private void UpdateJobTypeCounts()
+    {
+        foreach (var tab in JobTypeTabs)
+            tab.Count = tab.Type is null ? _items.Count : _items.Count(i => i.JobType == tab.Type);
     }
 
     private async void ScheduleFilter()
@@ -196,7 +254,10 @@ public sealed partial class MainViewModel : ObservableObject
             query = query.Where(i => i.IsStarred);
         if (StatusFilter != AnyStatus)
             query = query.Where(i => i.Status.ToString() == StatusFilter);
+        if (SelectedJobTypeTab.Type is { } type)
+            query = query.Where(i => i.JobType == type);
 
+        UpdateJobTypeCounts();
         var list = query.ToList();
         var previous = Selected;
 
@@ -208,9 +269,29 @@ public sealed partial class MainViewModel : ObservableObject
         // Same selection can come back unchanged, but the highlighted lines depend on the new search.
         Selected?.LoadDetail();
 
+        if (_items.Count == 0)
+        {
+            EmptyTitle = "No applications yet";
+            EmptyHint = "Paste a job page and your resume, and they are saved to a folder for you.";
+            EmptyButton = "Add your first application";
+        }
+        else if (Terms.Length > 0 || StarredOnly || StatusFilter != AnyStatus)
+        {
+            EmptyTitle = "No applications match";
+            EmptyHint = "Try different words, or click Clear to see everything on this tab.";
+            EmptyButton = "New application";
+        }
+        else
+        {
+            var kind = SelectedJobTypeTab.Name.ToLowerInvariant();
+            EmptyTitle = $"No {kind} applications yet";
+            EmptyHint = $"Applications you mark as {kind} appear here. New ones start as {kind} while you are on this tab.";
+            EmptyButton = "New application";
+        }
+
         Summary = Terms.Length > 0
-            ? $"{list.Count} of {_items.Count} applications · {hitCount} matching lines"
-            : $"{list.Count} of {_items.Count} applications";
+            ? $"{list.Count} of {SelectedJobTypeTab.Count} applications · {hitCount} matching lines"
+            : $"{list.Count} of {SelectedJobTypeTab.Count} applications";
     }
 
     public void RefreshBullets()

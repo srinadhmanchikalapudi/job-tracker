@@ -191,6 +191,43 @@
                 </Style.Triggers>
             </Style>
 
+            <!-- The All / Full-time / Contract strip above the applications: rounded segments, the chosen one tinted. -->
+            <Style x:Key="SegmentItem" TargetType="ListBoxItem">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Padding" Value="16,7" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Seg" Background="Transparent" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                                    CornerRadius="18" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Seg" Property="Background" Value="{StaticResource CardBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Seg" Property="Background" Value="{StaticResource AccentSoft}" />
+                                    <Setter TargetName="Seg" Property="BorderBrush" Value="{StaticResource AccentBorder}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Small chip that marks a contract role in the list. -->
+            <Style x:Key="ContractChip" TargetType="Border">
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="Padding" Value="8,2" />
+                <Setter Property="Background" Value="#26A855F7" />
+                <Setter Property="TextElement.Foreground" Value="#A855F7" />
+                <Setter Property="TextElement.FontSize" Value="12" />
+                <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+            </Style>
+
             <!-- Application list rows as soft cards. -->
             <Style x:Key="AppListItem" TargetType="ListBoxItem">
                 <Setter Property="Padding" Value="10,8" />

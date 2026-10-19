@@ -104,7 +104,32 @@
 
                 <!-- Applications -->
                 <TabItem Header="Applications" Padding="14,6">
-                    <Grid Margin="0,12,0,0">
+                  <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Full-time and contract roles are kept apart: one strip, with a count on each. -->
+                    <ListBox Grid.Row="0" Margin="0,12,0,0" ItemsSource="{Binding JobTypeTabs}" SelectedItem="{Binding SelectedJobTypeTab}"
+                             ItemContainerStyle="{StaticResource SegmentItem}" BorderThickness="0" Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Count}" Style="{StaticResource SubtleText}" Margin="8,0,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Grid Grid.Row="1" Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="350" MinWidth="260" />
                             <ColumnDefinition Width="Auto" />
@@ -149,6 +174,23 @@
                                                 <TextBlock Style="{StaticResource Icon}" Text="&#xE735;"
                                                            Foreground="{StaticResource StarBrush}" Margin="0,0,8,0"
                                                            Visibility="{Binding IsStarred, Converter={StaticResource BoolToVis}}" />
+                                                <Border Margin="0,0,6,0">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border" BasedOn="{StaticResource ContractChip}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <MultiDataTrigger>
+                                                                    <MultiDataTrigger.Conditions>
+                                                                        <Condition Binding="{Binding IsContract}" Value="True" />
+                                                                        <Condition Binding="{Binding DataContext.IsAllJobTypes, RelativeSource={RelativeSource AncestorType=ListBox}}" Value="True" />
+                                                                    </MultiDataTrigger.Conditions>
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </MultiDataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="Contract" />
+                                                </Border>
                                                 <Border Style="{StaticResource StatusPill}">
                                                     <TextBlock Text="{Binding Status}" />
                                                 </Border>
@@ -166,11 +208,11 @@
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,40"
                                         Visibility="{Binding NoSelection, Converter={StaticResource BoolToVis}}">
                                 <Image Source="{StaticResource LogoImage}" Width="88" Height="88" Opacity="0.9" />
-                                <TextBlock Text="No applications yet" FontSize="20" FontWeight="SemiBold"
+                                <TextBlock Text="{Binding EmptyTitle}" FontSize="20" FontWeight="SemiBold"
                                            HorizontalAlignment="Center" Margin="0,16,0,4" />
                                 <TextBlock Style="{StaticResource SubtleText}" HorizontalAlignment="Center" TextAlignment="Center"
-                                           Text="Paste a job page and your resume, and they are saved to a folder for you." />
-                                <Button Style="{StaticResource PrimaryButton}" Content="Add your first application"
+                                           Text="{Binding EmptyHint}" />
+                                <Button Style="{StaticResource PrimaryButton}" Content="{Binding EmptyButton}"
                                         HorizontalAlignment="Center" Margin="0,18,0,0" Click="NewApplication_Click" />
                             </StackPanel>
 
@@ -200,6 +242,11 @@
                                             <ComboBox Width="132" Margin="0,0,10,0" VerticalContentAlignment="Center"
                                                       ItemsSource="{x:Static vm:MainViewModel.Statuses}"
                                                       SelectedItem="{Binding Status}" />
+                                            <ComboBox Width="118" Margin="0,0,10,0" VerticalContentAlignment="Center"
+                                                      ItemsSource="{x:Static vm:MainViewModel.JobTypeOptions}"
+                                                      DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                      SelectedValue="{Binding JobType}"
+                                                      ToolTip="Full-time or contract. Changing it moves the application to the other tab." />
                                             <Border Style="{StaticResource Card}" CornerRadius="8" Padding="11,6" Margin="0,0,10,0">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE787;" Margin="0,0,8,0" Opacity="0.7" />
@@ -257,6 +304,7 @@
                             </Border>
                         </Grid>
                     </Grid>
+                  </Grid>
                 </TabItem>
 
                 <!-- Starred bullets -->

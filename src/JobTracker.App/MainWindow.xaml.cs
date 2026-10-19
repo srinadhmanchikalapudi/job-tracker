@@ -34,7 +34,7 @@ public partial class MainWindow : Window
 
     private void NewApplication_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new NewApplicationWindow { Owner = this };
+        var dialog = new NewApplicationWindow(_vm.DefaultNewJobType) { Owner = this };
         if (dialog.ShowDialog() == true && dialog.Result is { } input)
             _vm.AddApplication(input);
     }
