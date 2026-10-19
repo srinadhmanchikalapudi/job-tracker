@@ -59,11 +59,7 @@ public sealed partial class MainViewModel
         if (action == WhatsNewAction.RecordOnly)
             return null;
 
-        // With no record, just the running version. Otherwise everything between the last version seen and this one.
-        var entries = ReleaseNotes.History()
-            .Where(s => seen is null
-                ? UpdateVersions.Display(s.Version) == UpdateVersions.Display(current)
-                : UpdateVersions.IsNewer(s.Version, seen) && !UpdateVersions.IsNewer(s.Version, current))
+        var entries = WhatsNewPolicy.SectionsToShow(ReleaseNotes.History(), seen, current)
             .Select(s => new WhatsNewEntry(s.Title, UpdateVersions.Display(s.Version) == UpdateVersions.Display(current) ? "You have this version" : "", s.Items))
             .ToList();
         return entries.Count == 0 ? null : entries;

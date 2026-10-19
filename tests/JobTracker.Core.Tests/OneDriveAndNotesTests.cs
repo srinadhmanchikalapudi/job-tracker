@@ -312,6 +312,29 @@ public class WhatsNewPolicyTests
     public void TheSameOrNewerVersionSeen_ShowsNothing(string seen) =>
         Assert.Equal(WhatsNewAction.Nothing, WhatsNewPolicy.Decide(seen, isFirstRun: false, Current));
 
+    private static readonly IReadOnlyList<ReleaseSection> History =
+    [
+        new(new Version(1, 4, 0), ["four"]), new(new Version(1, 3, 1), ["three-one"]), new(new Version(1, 3, 0), ["three"]), new(new Version(1, 2, 0), ["two"]),
+    ];
+
+    private static string[] Versions(IReadOnlyList<ReleaseSection> sections) => sections.Select(s => UpdateVersions.Display(s.Version)).ToArray();
+
+    [Fact]
+    public void WithNoRecord_TheWholeReleaseLineOfTheRunningVersionIsShown() =>
+        Assert.Equal(["1.3.1", "1.3.0"], Versions(WhatsNewPolicy.SectionsToShow(History, null, new Version(1, 3, 1))));
+
+    [Fact]
+    public void WithARecord_EverythingNewerUpToTheRunningVersionIsShown()
+    {
+        Assert.Equal(["1.3.1", "1.3.0"], Versions(WhatsNewPolicy.SectionsToShow(History, new Version(1, 2, 0), new Version(1, 3, 1))));
+        Assert.Equal(["1.3.1"], Versions(WhatsNewPolicy.SectionsToShow(History, new Version(1, 3, 0), new Version(1, 3, 1))));
+        Assert.Empty(WhatsNewPolicy.SectionsToShow(History, new Version(1, 3, 1), new Version(1, 3, 1)));
+    }
+
+    [Fact]
+    public void VersionsNewerThanTheRunningOne_AreNeverShown() =>
+        Assert.DoesNotContain("1.4.0", Versions(WhatsNewPolicy.SectionsToShow(History, new Version(1, 2, 0), new Version(1, 3, 0))));
+
     [Fact]
     public void AGarbledRecord_IsTreatedAsNoRecord() =>
         Assert.Equal(WhatsNewAction.Show, WhatsNewPolicy.Decide("banana", isFirstRun: false, Current));

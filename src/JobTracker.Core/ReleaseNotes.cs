@@ -119,4 +119,14 @@ public static class WhatsNewPolicy
 
         return UpdateVersions.IsNewer(current, seen) ? WhatsNewAction.Show : WhatsNewAction.Nothing;
     }
+
+    /// <summary>
+    /// Which versions' notes to show: everything newer than the last version seen, up to the running one. With no record, the whole
+    /// release line of the running version (1.3.0 and 1.3.1 for 1.3.1), so a small fix does not hide the bigger news before it.
+    /// </summary>
+    public static IReadOnlyList<ReleaseSection> SectionsToShow(IReadOnlyList<ReleaseSection> history, Version? seen, Version current) =>
+        history
+            .Where(s => !UpdateVersions.IsNewer(s.Version, current) &&
+                        (seen is null ? s.Version.Major == current.Major && s.Version.Minor == current.Minor : UpdateVersions.IsNewer(s.Version, seen)))
+            .ToList();
 }

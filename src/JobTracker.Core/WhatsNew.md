@@ -3,6 +3,11 @@
 One section per version, newest first. Written for the people who use the app: they are shown inside the program (Settings, the update bar,
 and once after each update) and become the notes on the GitHub release. `tools/publish.ps1` refuses to build a version that has no section here.
 
+## 1.3.1
+
+- Moving your applications (for example into OneDrive) now fully tidies up the old folders. OneDrive marks folders read-only, which used to leave empty folders behind.
+- After an update, What's new shows everything new since you last looked, so a small fix does not hide the bigger news before it.
+
 ## 1.3.0
 
 - See what changed right inside Job Tracker: **What's new** is on the update bar and in Settings, and it opens by itself once after an update.
