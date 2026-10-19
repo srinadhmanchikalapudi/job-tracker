@@ -24,6 +24,8 @@ public sealed partial class MainViewModel
 
     public bool CanChangeFolder => !IsMovingFiles;
 
+    partial void OnIsMovingFilesChanged(bool value) => OnPropertyChanged(nameof(CanMoveToOneDrive));
+
     /// <summary>
     /// Starts using <paramref name="newRoot"/>. With <paramref name="moveExisting"/> the saved applications and starred bullets are copied there
     /// first and checked, the new folder is switched to, and only then are the originals removed. If the copy fails, nothing has changed.
@@ -48,6 +50,7 @@ public sealed partial class MainViewModel
                 return new FolderChangeResult(false, "The new folder could not be saved as your setting: " + ex.Message);
             }
 
+            RefreshBackupStatus();
             return new FolderChangeResult(true, $"Now saving to {newRoot}.");
         }
 
@@ -79,6 +82,7 @@ public sealed partial class MainViewModel
             await _dispatcher.InvokeAsync(() => MoveStatus = "Removing the old copies…").Task;
             var warnings = await Task.Run(() => DataRootMover.DeleteOriginals(oldRoot, result));
 
+            await _dispatcher.InvokeAsync(RefreshBackupStatus).Task;
             var count = result.Applications.Count;
             var summary = count == 1 ? "Moved 1 application" : $"Moved {count} applications";
             return warnings.Count == 0

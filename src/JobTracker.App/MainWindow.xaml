@@ -68,7 +68,7 @@
                         <Button Style="{StaticResource PrimaryButton}" Padding="14,6" Content="{Binding UpdateActionText}"
                                 Click="UpdateNow_Click" />
                         <Button Style="{StaticResource GhostButton}" Padding="12,6" Margin="8,0,0,0" Content="What's new"
-                                Command="{Binding OpenReleasePageCommand}" />
+                                Click="WhatsNew_Click" />
                         <Button Style="{StaticResource GhostButton}" Padding="12,6" Margin="8,0,0,0" Content="Later"
                                 Command="{Binding DismissUpdateCommand}" />
                     </StackPanel>

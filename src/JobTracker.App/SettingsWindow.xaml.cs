@@ -12,27 +12,42 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+        viewModel.RefreshBackupStatus(); // OneDrive may have been started or stopped since the last time
     }
 
-    /// <summary>
-    /// Pick a folder, then (if the current one holds applications) choose to move them. Moving copies and checks everything before the old
-    /// files are removed, so a failure leaves the applications exactly where they were.
-    /// </summary>
+    private MainViewModel Vm => (MainViewModel)DataContext;
+
     private async void ChangeFolder_Click(object sender, RoutedEventArgs e)
     {
-        var vm = (MainViewModel)DataContext;
         var picker = new OpenFolderDialog
         {
             Title = "Choose the folder where applications are saved",
-            InitialDirectory = Directory.Exists(vm.DataRoot) ? vm.DataRoot : null,
+            InitialDirectory = Directory.Exists(Vm.DataRoot) ? Vm.DataRoot : null,
         };
-        if (picker.ShowDialog(this) != true)
-            return;
+        if (picker.ShowDialog(this) == true)
+            await ApplyFolderAsync(picker.FolderName, offerSubfolder: true);
+    }
 
-        var chosen = picker.FolderName;
+    /// <summary>The folder OneDrive keeps online: Documents when it is synced, otherwise the OneDrive folder itself.</summary>
+    private async void MoveToOneDrive_Click(object sender, RoutedEventArgs e)
+    {
+        if (Vm.BackupSuggestedFolder is { } folder)
+            await ApplyFolderAsync(folder, offerSubfolder: false);
+    }
+
+    private void WhatsNew_Click(object sender, RoutedEventArgs e) =>
+        new WhatsNewWindow(Vm.BuildWhatsNew(), Vm.VersionText) { Owner = this }.ShowDialog();
+
+    /// <summary>
+    /// Switch to <paramref name="chosen"/>. If the current folder holds applications, ask whether to move them. Moving copies and checks
+    /// everything before the old files are removed, so a failure leaves the applications exactly where they were.
+    /// </summary>
+    private async Task ApplyFolderAsync(string chosen, bool offerSubfolder)
+    {
+        var vm = Vm;
 
         // A folder that already holds other things (Desktop, Documents): keep the company folders in a folder of their own.
-        if (DataRootMover.Validate(vm.DataRoot, chosen) is null && DataRootAdvisor.ShouldSuggestSubfolder(chosen))
+        if (offerSubfolder && DataRootMover.Validate(vm.DataRoot, chosen) is null && DataRootAdvisor.ShouldSuggestSubfolder(chosen))
         {
             var answer = MessageBox.Show(this,
                 $"{chosen} already has other files in it.\n\nCreate a folder named \"{DataRootAdvisor.SubfolderName}\" inside it and use that, so your applications stay together?",

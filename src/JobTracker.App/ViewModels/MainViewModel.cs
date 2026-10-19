@@ -32,9 +32,14 @@ public sealed partial class MainViewModel : ObservableObject
     private List<ApplicationItemVM> _items = [];
     private CancellationTokenSource? _debounce;
 
-    public MainViewModel(AppSettings settings)
+    private readonly OneDriveLocator _oneDrive;
+    private readonly IKnownFolders _knownFolders;
+
+    public MainViewModel(AppSettings settings, OneDriveLocator? oneDrive = null, IKnownFolders? knownFolders = null)
     {
         _settings = settings;
+        _oneDrive = oneDrive ?? new OneDriveLocator();
+        _knownFolders = knownFolders ?? new WindowsKnownFolders();
         (_store, _bulletLibrary, _search) = CreateStores(settings.DataRoot);
 
         ApplicationsView = CollectionViewSource.GetDefaultView(Applications);

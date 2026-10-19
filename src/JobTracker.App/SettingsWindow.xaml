@@ -31,6 +31,32 @@
         </Border>
 
         <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" VerticalAlignment="Top" Margin="14,0,0,0" Style="{StaticResource GhostButton}"
+                        Content="Move to OneDrive" Click="MoveToOneDrive_Click"
+                        Visibility="{Binding CanMoveToOneDrive, Converter={StaticResource BoolToVis}}" />
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE753;" FontSize="18" Margin="0,0,10,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+                                    <Setter Property="Foreground" Value="#D97706" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding BackupIsGood}" Value="True">
+                                            <Setter Property="Foreground" Value="#16A34A" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding BackupHeadline}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding BackupDetail}" Style="{StaticResource SubtleText}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock Text="Updates" FontWeight="SemiBold" />
                 <CheckBox Content="Look for a new version when the app starts" Margin="0,8,0,0"
@@ -47,8 +73,10 @@
 
         <Border Style="{StaticResource Card}">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="View on GitHub"
+                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="View on GitHub" Margin="8,0,0,0"
                         Command="{Binding OpenRepositoryCommand}" />
+                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="What's new"
+                        Click="WhatsNew_Click" />
                 <StackPanel>
                     <TextBlock Text="Job Tracker" FontWeight="SemiBold" />
                     <TextBlock Text="{Binding VersionText}" Style="{StaticResource SubtleText}" />

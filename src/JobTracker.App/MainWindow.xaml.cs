@@ -16,7 +16,13 @@ public partial class MainWindow : Window
         _vm = new MainViewModel(settings);
         _vm.AttachUpdates(AppInfo.CreateUpdateService(settings));
         DataContext = _vm;
-        Loaded += async (_, _) => await _vm.StartupUpdateCheckAsync();
+        Loaded += async (_, _) =>
+        {
+            // Just updated? Say what changed, once, before anything else.
+            if (_vm.WhatsNewOnStartup() is { } entries)
+                new WhatsNewWindow(entries, $"Job Tracker is now {_vm.VersionText.ToLowerInvariant()}") { Owner = this }.ShowDialog();
+            await _vm.StartupUpdateCheckAsync();
+        };
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -38,6 +44,9 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() == true && dialog.Result is { } input)
             _vm.AddApplication(input);
     }
+
+    private void WhatsNew_Click(object sender, RoutedEventArgs e) =>
+        new WhatsNewWindow(_vm.BuildWhatsNew(), _vm.VersionText) { Owner = this }.ShowDialog();
 
     private void Settings_Click(object sender, RoutedEventArgs e) =>
         new SettingsWindow(_vm) { Owner = this }.ShowDialog();
