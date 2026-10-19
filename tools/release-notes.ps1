@@ -29,10 +29,25 @@ $range = if ($previous) { "$previous..$Tag" } else { $Tag }
 $subjects = @(& git log $range --no-merges "--pretty=format:%s") | Where-Object { $_ -and $_.Trim() } | Select-Object -First $Max
 
 $version = $Tag.TrimStart("v")
+
+# The notes written for people (src\JobTracker.Core\WhatsNew.md, the same text the app shows) win over commit subjects.
+$curated = @()
+$notesFile = Join-Path (Split-Path -Parent $PSScriptRoot) "src\JobTracker.Core\WhatsNew.md"
+if (Test-Path $notesFile) {
+    $inSection = $false
+    foreach ($line in Get-Content $notesFile -Encoding UTF8) {
+        if ($line -match '^##\s+v?(\d+\.\d+(\.\d+)?)\b') { $inSection = ($Matches[1] -eq $version) -or ("$($Matches[1]).0" -eq $version); continue }
+        if ($inSection -and $line.TrimStart().StartsWith("- ")) { $curated += $line.Trim() }
+    }
+}
+
 $lines = @()
 $lines += "## What's new in $version"
 $lines += ""
-if ($subjects.Count -gt 0) {
+if ($curated.Count -gt 0) {
+    $lines += $curated
+    if ($previous) { $lines += ""; $lines += "Changes since $previous." }
+} elseif ($subjects.Count -gt 0) {
     foreach ($s in $subjects) { $lines += "- $($s.Trim())" }
     if ($previous) { $lines += ""; $lines += "Changes since $previous." }
 } else {

@@ -80,17 +80,47 @@ Filename: "{app}\{#AppExe}"; Flags: nowait runasoriginaluser; Check: RestartRequ
 
 [Code]
 // ---- Where the applications are saved ---------------------------------------------------------------------------------------------------
-// A wizard page asks for the folder (default: JobApplications on the Desktop). The choice is recorded in {app}\install-defaults.json, which
+// A wizard page asks for the folder. The suggestion is the same one the program makes: a JobApplications folder that already exists (in Documents
+// or on the Desktop), otherwise Documents when OneDrive syncs it (so the applications survive a damaged profile or a Windows reset), otherwise
+// the Desktop. The choice is recorded in {app}\install-defaults.json, which
 // the program reads only until the person has a settings file of their own, and it can be changed any time in Settings (with an option to
 // move what is already saved). The page is skipped on updates and re-installs (the person has chosen already) and on silent installs, which
-// can pass /DATAROOT="D:\Jobs" instead. Nothing is written unless the folder differs from the default, so an all-users install does not
-// hand the installing person's Desktop to everyone.
+// can pass /DATAROOT="D:\Jobs" instead. For an all-users install nothing is written unless the person changed the suggestion, so it does not
+// hand the installing person's own folders to everyone.
 var
   DataPage: TInputDirWizardPage;
+  InitialDataRoot: string;
+
+// True when Path is inside a folder OneDrive syncs (Windows sets these variables for the signed-in accounts).
+function IsUnderOneDrive(const Path: string): Boolean;
+var
+  Roots: array[0..2] of string;
+  I: Integer;
+begin
+  Result := False;
+  Roots[0] := GetEnv('OneDriveConsumer');
+  Roots[1] := GetEnv('OneDriveCommercial');
+  Roots[2] := GetEnv('OneDrive');
+  for I := 0 to 2 do
+    if Roots[I] <> '' then
+      if Pos(Lowercase(AddBackslash(Roots[I])), Lowercase(AddBackslash(Path))) = 1 then
+        Result := True;
+end;
 
 function DefaultDataRoot: string;
+var
+  Docs, Desk: string;
 begin
-  Result := ExpandConstant('{userdesktop}\JobApplications');
+  Docs := ExpandConstant('{userdocs}\JobApplications');
+  Desk := ExpandConstant('{userdesktop}\JobApplications');
+  if DirExists(Docs) then
+    Result := Docs
+  else if DirExists(Desk) then
+    Result := Desk
+  else if IsUnderOneDrive(ExpandConstant('{userdocs}')) then
+    Result := Docs
+  else
+    Result := Desk;
 end;
 
 function SettingsFile: string;
@@ -131,7 +161,8 @@ begin
     'The default is on your Desktop. You can change this later in Settings, and move what you have already saved.',
     False, '');
   DataPage.Add('');
-  DataPage.Values[0] := DefaultDataRoot;
+  InitialDataRoot := DefaultDataRoot;
+  DataPage.Values[0] := InitialDataRoot;
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -165,7 +196,8 @@ begin
     if (Root = '') and (DataPage <> nil) and (not ShouldSkipPage(DataPage.ID)) then
       Root := Trim(DataPage.Values[0]);
 
-    if (Root <> '') and (CompareText(Root, DefaultDataRoot) <> 0) then
+    // Someone installing for themselves gets what they saw recorded; for all users, only a folder they typed in.
+    if (Root <> '') and ((not IsAdminInstallMode) or (CompareText(Root, InitialDataRoot) <> 0)) then
     begin
       SetArrayLength(Lines, 1);
       Lines[0] := '{"DataRoot": "' + JsonEscape(Root) + '"}';

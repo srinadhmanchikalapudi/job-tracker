@@ -34,6 +34,12 @@ if ($Installer) {
     if (-not $iscc) { throw "Inno Setup was not found. Install it with:  winget install JRSoftware.InnoSetup" }
 }
 
+# Every version needs notes written for people (they are shown inside the app and become the GitHub release notes).
+$notesFile = Join-Path $root "src\JobTracker.Core\WhatsNew.md"
+if (-not (Select-String -Path $notesFile -Pattern ("^##\s+v?" + [regex]::Escape($Version) + "\b") -Quiet)) {
+    throw "src\JobTracker.Core\WhatsNew.md has no section for version $Version. Add ' ## $Version ' with a line for each change, then publish again."
+}
+
 if (-not $SkipTests) {
     Write-Host "Running the tests first..." -ForegroundColor Cyan
     dotnet test JobTracker.slnx -c Release --nologo
