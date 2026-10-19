@@ -49,8 +49,8 @@ internal sealed class TempDir : IDisposable
         try
         {
             // Some tests make read-only files, which a plain recursive delete refuses to remove.
-            foreach (var file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
-                File.SetAttributes(file, FileAttributes.Normal);
+            foreach (var entry in Directory.EnumerateFileSystemEntries(Path, "*", SearchOption.AllDirectories))
+                File.SetAttributes(entry, File.GetAttributes(entry) & ~FileAttributes.ReadOnly);
             Directory.Delete(Path, recursive: true);
         }
         catch (IOException) { }

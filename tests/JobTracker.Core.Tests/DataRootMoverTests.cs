@@ -188,6 +188,28 @@ public class DataRootMoverTests
     }
 
     [Fact]
+    public void DeleteOriginals_RemovesReadOnlyFolders_AsOneDriveMakesThem()
+    {
+        // OneDrive marks the folders it syncs read-only, and Windows refuses to delete a read-only folder. It must still be cleaned up.
+        using var temp = new TempDir();
+        var oldRoot = Path.Combine(temp.Path, "old");
+        var store = new ApplicationStore(oldRoot);
+        var acme = Add(store, "Acme", "Backend");
+        Directory.CreateDirectory(Path.Combine(acme.FolderPath, "attachments"));
+        File.WriteAllText(Path.Combine(acme.FolderPath, "attachments", "extra.txt"), "x");
+        var company = Path.Combine(oldRoot, "Acme");
+        foreach (var folder in new[] { Path.Combine(acme.FolderPath, "attachments"), acme.FolderPath, company })
+            File.SetAttributes(folder, FileAttributes.Directory | FileAttributes.ReadOnly);
+        var result = DataRootMover.CopyAll(oldRoot, Path.Combine(temp.Path, "new"));
+
+        var warnings = DataRootMover.DeleteOriginals(oldRoot, result);
+
+        Assert.Empty(warnings);
+        Assert.False(Directory.Exists(acme.FolderPath));
+        Assert.False(Directory.Exists(company));
+    }
+
+    [Fact]
     public void CopyAll_WhenAFileCannotBeCopied_RollsBackAndLeavesEverythingAsItWas()
     {
         using var temp = new TempDir();

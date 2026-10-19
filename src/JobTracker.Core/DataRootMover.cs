@@ -146,7 +146,7 @@ public static class DataRootMover
             try
             {
                 if (Directory.Exists(company) && !Directory.EnumerateFileSystemEntries(company).Any())
-                    Directory.Delete(company);
+                    DeleteEmptyFolder(company);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -163,10 +163,10 @@ public static class DataRootMover
             {
                 var file = BulletsFile(oldRoot);
                 if (File.Exists(file))
-                    File.Delete(file);
+                    DeleteFile(file);
                 var dir = Path.GetDirectoryName(file)!;
                 if (Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
-                    Directory.Delete(dir);
+                    DeleteEmptyFolder(dir);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -229,31 +229,55 @@ public static class DataRootMover
             if (bulletsBackup is not null)
                 File.WriteAllBytes(bulletsFile, bulletsBackup);
             else if (!bulletsExisted && File.Exists(bulletsFile))
-                File.Delete(bulletsFile);
+                DeleteFile(bulletsFile);
 
             var appData = Path.GetDirectoryName(bulletsFile)!;
             if (!bulletsExisted && Directory.Exists(appData) && !Directory.EnumerateFileSystemEntries(appData).Any())
-                Directory.Delete(appData);
+                DeleteEmptyFolder(appData);
 
             foreach (var company in createdCompanyFolders)
             {
                 if (Directory.Exists(company) && !Directory.EnumerateFileSystemEntries(company).Any())
-                    Directory.Delete(company);
+                    DeleteEmptyFolder(company);
             }
 
             if (!newRootExisted && Directory.Exists(newRoot) && !Directory.EnumerateFileSystemEntries(newRoot).Any())
-                Directory.Delete(newRoot);
+                DeleteEmptyFolder(newRoot);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
-    /// <summary>Deletes a folder even if it holds read-only files (the attribute makes a plain delete fail).</summary>
+    /// <summary>
+    /// Deletes a folder even if it holds read-only files or folders. OneDrive marks the folders it syncs read-only, and Windows refuses to
+    /// delete a read-only folder, so the flag is cleared on everything first (other attributes are left as they are).
+    /// </summary>
     private static void ForceDelete(string folder)
     {
         if (!Directory.Exists(folder))
             return;
-        foreach (var file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
-            File.SetAttributes(file, FileAttributes.Normal);
+        foreach (var entry in Directory.EnumerateFileSystemEntries(folder, "*", SearchOption.AllDirectories))
+            ClearReadOnly(entry);
+        ClearReadOnly(folder);
         Directory.Delete(folder, recursive: true);
+    }
+
+    /// <summary>Deletes a folder that is known to be empty, clearing a read-only flag on it first.</summary>
+    private static void DeleteEmptyFolder(string folder)
+    {
+        ClearReadOnly(folder);
+        Directory.Delete(folder);
+    }
+
+    private static void DeleteFile(string file)
+    {
+        ClearReadOnly(file);
+        File.Delete(file);
+    }
+
+    private static void ClearReadOnly(string path)
+    {
+        var attributes = File.GetAttributes(path);
+        if ((attributes & FileAttributes.ReadOnly) != 0)
+            File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
     }
 
     private static string Normalise(string path) => Path.GetFullPath(path).TrimEnd('\\', '/');
