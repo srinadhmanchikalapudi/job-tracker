@@ -7,7 +7,7 @@ starred bullets and in-app updates from GitHub Releases. Read `README.md` for th
 
 ```
 dotnet run --project src/JobTracker.App
-dotnet test                                  # all tests (132 at last count)
+dotnet test                                  # all tests (158 at last count)
 dotnet build JobTracker.slnx -c Release      # use -c Release when the user has the Debug exe running
 powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Version 1.0.0 -Installer
 ```

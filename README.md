@@ -19,7 +19,7 @@
 <p align="center">
   <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4">
   <img alt="WPF" src="https://img.shields.io/badge/UI-WPF%20%28MVVM%29-0078D4">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-132%20passing-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-158%20passing-2EA043">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
   <a href="https://github.com/srinadhmanchikalapudi/job-tracker/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/srinadhmanchikalapudi/job-tracker?label=release"></a>
@@ -49,6 +49,7 @@ Applying to jobs means tailoring a resume for each posting. A week later, when a
 
 - **Paste, don't type.** Copy the whole job page (Ctrl+A, Ctrl+C) and paste it in. Company, role and link fill in on their own.
 - **Clean job descriptions.** Menus, buttons, "Similar jobs" lists and cookie banners are removed. Headings, bullets and blank lines stay exactly as pasted. A preview shows the result first, and the original is kept as `jd.original.txt`.
+- **Full-time and contract, kept apart.** Tabs above the applications (All, Full-time, Contract, each with a count) separate the two kinds. Choose the type when you add an application: it is filled in for you when the posting says "Contract", and it starts as the tab you are on. You can change it later, and the application moves to the other tab.
 - **One folder per application**, easy to find in Explorer: `JobApplications\<Company>\<date>_<Role>\`.
 - **Search by keyword** inside job descriptions, resumes, or both. Every word must appear, and matching lines are highlighted.
 - **Star the lines you want to reuse.** Hover any line to star it into your bullet library, or copy it (the leading dash is dropped). The **Starred bullets** tab is a searchable library of your best resume lines.
@@ -72,6 +73,7 @@ Applying to jobs means tailoring a resume for each posting. A week later, when a
 |---|---|
 | Add an application | **New application** (Ctrl+N). Paste the job page into the job description box, paste your resume, check the filled-in company and role, and click **Save application**. |
 | See the cleaned description before saving | **Preview clean-up** above the job description box. Untick the clean-up checkbox to keep the paste exactly as it is. |
+| Keep contract and full-time roles apart | Use the **All / Full-time / Contract** tabs above the list. **Job type** in the New application window decides the tab (it is picked for you when the posting says contract, and starts as the tab you are on). To change it later, use the job type box on the application. |
 | Find an application | **Search** (Ctrl+F). Choose **JD**, **Resume** or **Both**, tick **Matching lines only** to hide everything else, and filter by status or starred. |
 | Keep a resume line for later | Hover the line and click the star. It appears under **Starred bullets** with its company and role. |
 | Copy a line into a new resume | Click the copy icon on the line, or **Copy** in Starred bullets. |
@@ -84,7 +86,7 @@ Applying to jobs means tailoring a resume for each posting. A week later, when a
 JobApplications\
   Acme Corp\
     2026-10-07_Senior Backend Engineer\
-      jd.md  resume.md  notes.md  meta.json
+      jd.md  resume.md  notes.md  meta.json     # meta.json holds the status and whether it is full-time or contract
       jd.original.txt                  # the JD exactly as pasted, only when clean-up changed it
   .jobtracker\bullets.json             # your starred bullets
 ```
