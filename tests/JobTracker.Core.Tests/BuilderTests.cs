@@ -236,7 +236,7 @@ public class ProfileStoreTests : IDisposable
 
     [Fact]
     public void ADownloadNameIsMadeFromTheName() =>
-        Assert.Equal("Alex Rivera - Resume.docx", DownloadNames.Suggest(ResumeProfileText.Build(Sample.Alex()), ""));
+        Assert.Equal("Alex_Rivera_Resume.docx", DownloadNames.Suggest(ResumeProfileText.Build(Sample.Alex())));
 }
 
 public class MoverCarriesTheBuiltResumeTests : IDisposable

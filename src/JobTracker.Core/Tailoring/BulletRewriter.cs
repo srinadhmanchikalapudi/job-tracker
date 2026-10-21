@@ -111,32 +111,18 @@ public sealed class BulletRewriter(IChatModel model, SkillLexicon? lexicon = nul
         return new RewriteResult(options, rejected);
     }
 
-    /// <summary>Reads the model's JSON, tolerating a code fence or a sentence before it.</summary>
+    /// <summary>Reads the model's options, however it dressed them (see <see cref="ModelJson"/>). An explanation instead of JSON is an error that says what the model said.</summary>
     public static IReadOnlyList<(string Text, IReadOnlyList<string> Uses, string Note)> ParseOptions(string reply)
     {
-        var start = reply.IndexOf('{');
-        var end = reply.LastIndexOf('}');
-        if (start < 0 || end <= start)
-            throw new ModelException("The AI answered in a form this app could not read. Try again.");
-
-        JsonNode? root;
-        try
-        {
-            root = JsonNode.Parse(reply[start..(end + 1)]);
-        }
-        catch (JsonException)
-        {
-            throw new ModelException("The AI answered in a form this app could not read. Try again.");
-        }
-
+        var root = ModelJson.Find(reply);
         var result = new List<(string, IReadOnlyList<string>, string)>();
-        foreach (var option in (root?["options"] as JsonArray) ?? [])
+        foreach (var option in ModelJson.Items(root, "options", "bullets", "suggestions", "results"))
         {
-            var text = option?["text"]?.GetValue<string>()?.Trim();
+            var text = ModelJson.TextOf(option);
             if (string.IsNullOrWhiteSpace(text))
                 continue;
-            var uses = (option?["uses"] as JsonArray)?.Select(u => u?.GetValue<string>() ?? "").Where(u => u.Length > 0).ToList() ?? [];
-            result.Add((BulletText.Clean(text), uses, option?["note"]?.GetValue<string>()?.Trim() ?? ""));
+            var uses = (ModelJson.Member(option, "uses") as JsonArray)?.Select(u => (u as JsonValue)?.TryGetValue<string>(out var s) == true ? s! : "").Where(u => u.Length > 0).ToList() ?? [];
+            result.Add((BulletText.Clean(text), uses, ModelJson.StringOf(option, "note", "why", "reason") ?? ""));
         }
 
         return result.Take(5).ToList();

@@ -116,7 +116,7 @@ public sealed class AnthropicChatModel(HttpClient http, string apiKey, string mo
         var body = new JsonObject
         {
             ["model"] = model,
-            ["max_tokens"] = 1500,
+            ["max_tokens"] = 3000,
             ["temperature"] = 0.3,
             ["system"] = system,
             ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = user }),
@@ -144,7 +144,7 @@ public sealed class OpenRouterChatModel(HttpClient http, string apiKey, string m
         var body = new JsonObject
         {
             ["model"] = model,
-            ["max_tokens"] = 1500,
+            ["max_tokens"] = 3000,
             ["temperature"] = 0.3,
             ["messages"] = new JsonArray(
                 new JsonObject { ["role"] = "system", ["content"] = system },

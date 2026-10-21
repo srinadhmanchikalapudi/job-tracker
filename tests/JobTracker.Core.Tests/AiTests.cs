@@ -182,6 +182,72 @@ public class CredentialStoreTests
     }
 }
 
+public class ModelReplyTests
+{
+    private static IReadOnlyList<string> Texts(string reply) => BulletRewriter.ParseOptions(reply).Select(o => o.Text).ToList();
+
+    [Fact]
+    public void WhenTheModelExplainsInsteadOfAnsweringThePersonSeesWhatItSaid()
+    {
+        var ex = Assert.Throws<ModelException>(() => BulletRewriter.ParseOptions(
+            "I can't write a bullet from just the word Kubernetes, because I would have to invent what you did with it. Tell me more and I will."));
+        Assert.StartsWith("The AI answered in words instead of bullets. It said: “I can't write a bullet from just the word Kubernetes", ex.Message);
+    }
+
+    [Fact]
+    public void ALongExplanationIsCutShort()
+    {
+        var ex = Assert.Throws<ModelException>(() => BulletRewriter.ParseOptions(new string('x', 2000)));
+        Assert.True(ex.Message.Length < 450);
+        Assert.EndsWith("…”", ex.Message);
+    }
+
+    [Fact]
+    public void AnEmptyReplyIsSaidToBeEmpty() =>
+        Assert.Contains("empty", Assert.Throws<ModelException>(() => BulletRewriter.ParseOptions("  \n ")).Message);
+
+    [Fact]
+    public void AReplyWithAnExplanationAndTheJsonAfterItIsRead() =>
+        Assert.Equal(["Cut latency by 63%"], Texts("Sure, here you go (two {curly} words in this sentence):\n```json\n{\"options\":[{\"text\":\"Cut latency by 63%\"}]}\n```\nHope that helps!"));
+
+    [Fact]
+    public void ABareListOfBulletsIsRead() =>
+        Assert.Equal(["Cut latency by 63%", "Ran the rota"], Texts("[\"- Cut latency by 63%\", \"Ran the rota\"]"));
+
+    [Fact]
+    public void ABareListOfObjectsIsRead() =>
+        Assert.Equal(["Cut latency by 63%"], Texts("[{\"bullet\":\"Cut latency by 63%\",\"why\":\"from your answer\"}]"));
+
+    [Theory]
+    [InlineData("{\"bullets\":[{\"text\":\"A\"}]}")]
+    [InlineData("{\"suggestions\":[\"A\"]}")]
+    [InlineData("{\"options\":[{\"content\":\"A\"}]}")]
+    public void TheListMayHaveAnotherUsualName(string reply) => Assert.Equal(["A"], Texts(reply));
+
+    [Fact]
+    public void ABraceInsideAStringDoesNotBreakReading() =>
+        Assert.Equal(["Used {braces} in a bullet"], Texts("{\"options\":[{\"text\":\"Used {braces} in a bullet\"}]}"));
+
+    [Fact]
+    public void NoOptionsIsAnAnswerNotAnError() =>
+        Assert.Empty(Texts("{\"options\":[]}"));
+
+    [Fact]
+    public void ANoteUnderAnotherNameIsKept() =>
+        Assert.Equal("from your answer", BulletRewriter.ParseOptions("{\"options\":[{\"text\":\"A\",\"why\":\"from your answer\"}]}").Single().Note);
+
+    [Fact]
+    public void JobReplyAcceptsAStringNumberAndAnotherListName()
+    {
+        var parsed = JobBulletWriter.ParseJobBullets("Here: {\"rewrites\":[{\"n\":\"2\",\"text\":\"B\"},{\"n\":1,\"bullet\":\"A\"}]}");
+        Assert.Equal([(2, "B", ""), (1, "A", "")], parsed.ToArray());
+    }
+
+    [Fact]
+    public void JobReplyInWordsSaysWhatTheModelSaid() =>
+        Assert.Contains("It said", Assert.Throws<ModelException>(() => JobBulletWriter.ParseJobBullets("None of these can be improved honestly.")).Message);
+}
+
 public class BulletRewriterTests
 {
     private const string Resume = "## Experience\nContoso Insurance, Senior Engineer\n- Cut SQL Server query latency by 63% by redesigning indexes in the claims API\n- Moved nightly batch jobs to scheduled workers\n";
@@ -272,7 +338,8 @@ public class BulletRewriterTests
     public void AReplyThatIsNotJsonIsAnErrorTheUserCanRead()
     {
         var ex = Assert.Throws<ModelException>(() => BulletRewriter.ParseOptions("Sure! Here is a better bullet."));
-        Assert.Contains("could not read", ex.Message);
+        Assert.Contains("answered in words", ex.Message);
+        Assert.Contains("Sure! Here is a better bullet.", ex.Message); // the person sees what the AI actually said
     }
 
     [Fact]

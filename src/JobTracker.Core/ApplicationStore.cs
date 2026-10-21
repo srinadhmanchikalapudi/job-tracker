@@ -55,6 +55,39 @@ public sealed class ApplicationStore(string root)
         return new JobApplication { FolderPath = folder, Meta = meta };
     }
 
+    /// <summary>
+    /// Removes one application: its whole folder (job description, resume, notes, versions and any file the person added) is handed to
+    /// <paramref name="disposeFolder"/>, which in the app sends it to the Recycle Bin. Then the company folder is removed too if nothing else is in it.
+    /// Refuses anything that is not an application folder directly under a company folder of this data root, so a wrong path can never remove
+    /// the data folder, a company folder or something else.
+    /// </summary>
+    public void Remove(JobApplication app, Action<string> disposeFolder)
+    {
+        var folder = Path.GetFullPath(app.FolderPath).TrimEnd(Path.DirectorySeparatorChar);
+        var companyDir = Path.GetDirectoryName(folder);
+        var root = Path.GetFullPath(Root).TrimEnd(Path.DirectorySeparatorChar);
+        var isApplicationFolder = companyDir is not null
+            && string.Equals(Path.GetDirectoryName(companyDir), root, StringComparison.OrdinalIgnoreCase)
+            && !Path.GetFileName(companyDir).StartsWith('.')
+            && File.Exists(Path.Combine(folder, MetaFile));
+        if (!isApplicationFolder)
+            throw new IOException("That is not an application folder in your data folder, so it was not removed.");
+
+        disposeFolder(folder);
+        if (Directory.Exists(folder))
+            throw new IOException("The application folder could not be removed.");
+
+        try
+        {
+            if (Directory.Exists(companyDir) && !Directory.EnumerateFileSystemEntries(companyDir).Any())
+                Directory.Delete(companyDir);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // an empty company folder left behind is only untidy
+        }
+    }
+
     /// <summary>The attached original resume of an application (resume.original.pdf and so on), or null when there is none.</summary>
     public string? FindOriginalResume(JobApplication app) =>
         Directory.Exists(app.FolderPath)

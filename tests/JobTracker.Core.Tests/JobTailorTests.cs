@@ -252,3 +252,129 @@ public class JobBulletWriterTests
     public void AReplyThatIsNotJsonIsAReadableError() =>
         Assert.Throws<ModelException>(() => JobBulletWriter.ParseJobBullets("Here are my edits: bullet one is better."));
 }
+
+public class AnswerCheckTests
+{
+    [Theory]
+    [InlineData("banana", true)]
+    [InlineData("ran banana", true)]
+    [InlineData("ran Kubernetes", true)]      // two words, but one of them is an action: too little to write from
+    [InlineData("Kubernetes", false)]         // a skill on its own is a claim, handled separately
+    [InlineData("Kubernetes, Terraform", false)]
+    [InlineData("ran Kubernetes deployments", false)]
+    [InlineData("I ran the on-call rota for a team of 6", false)]
+    [InlineData("", false)]
+    [InlineData("   ", false)]
+    [InlineData(null, false)]
+    public void AWordOrTwoThatIsNotASkillIsTooThin(string? answers, bool expected) =>
+        Assert.Equal(expected, JobTracker.Core.Tailoring.AnswerCheck.IsTooThin(answers));
+
+    [Theory]
+    [InlineData("Kubernetes", "Kubernetes")]
+    [InlineData("  kubernetes  ", "Kubernetes")]
+    [InlineData("Kubernetes, Terraform & Helm", "Kubernetes|Terraform|Helm")]
+    [InlineData("Kubernetes and Terraform", "Kubernetes|Terraform")]
+    [InlineData("SQL Server", "SQL Server")]
+    [InlineData("C#, .NET", "C#|.NET")]
+    public void ASkillTypedOnItsOwnIsAClaimNotAnAnswer(string text, string expected)
+    {
+        Assert.True(JobTracker.Core.Tailoring.AnswerCheck.SkillsOnly(text, out var skills));
+        Assert.Equal(expected, string.Join("|", skills));
+    }
+
+    [Theory]
+    [InlineData("ran Kubernetes deployments")]
+    [InlineData("Kubernetes for the claims API")]
+    [InlineData("banana")]
+    [InlineData("")]
+    public void AnythingMoreThanSkillsIsNotASkillOnlyAnswer(string text) =>
+        Assert.False(JobTracker.Core.Tailoring.AnswerCheck.SkillsOnly(text, out _));
+
+    [Theory]
+    [InlineData("Kubernetes", true)]
+    [InlineData("banana", true)]
+    [InlineData("ran Kubernetes", true)]
+    [InlineData("ran Kubernetes deployments", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void WhereThereIsNoJobEvenALoneSkillIsTooShort(string? answers, bool expected) =>
+        Assert.Equal(expected, JobTracker.Core.Tailoring.AnswerCheck.IsTooShort(answers));
+
+    [Fact]
+    public void TheShortMessageAsksForASentenceAndDoesNotMentionTheJobDescription()
+    {
+        var message = JobTracker.Core.Tailoring.AnswerCheck.ShortMessage(" Kubernetes ");
+        Assert.StartsWith("“Kubernetes” on its own", message);
+        Assert.Contains("in a sentence", message);
+        Assert.DoesNotContain("job description", message);
+    }
+
+    [Fact]
+    public void TheMessageForAThinAnswerSaysWhatToType()
+    {
+        var message = JobTracker.Core.Tailoring.AnswerCheck.ThinMessage(" banana ");
+        Assert.StartsWith("“banana” on its own", message);
+        Assert.Contains("a skill from the job description", message);
+        Assert.Contains("in a sentence", message);
+    }
+}
+
+public class SkillClaimedWithoutDetailsTests
+{
+    private const string Resume = "## Experience\nContoso Insurance, Senior Engineer\n- Moved nightly batch jobs from a cron host to scheduled workers\n- Cut SQL Server query latency by 63% by redesigning indexes in the claims API\n";
+    private const string Jd = "## Requirements\n- Kubernetes and Terraform\n";
+
+    private static NewBulletsRequest Request(params string[] claimed) =>
+        new(ResumeStructure.Jobs(Resume).Single(), Resume, Jd, "Northwind Labs", claimed, claimed.Select(c => new AttestedSkill { Skill = c, Note = "" }).ToList(), "");
+
+    private static string Options(params string[] texts) =>
+        "{\"options\":[" + string.Join(",", texts.Select(t => "{\"text\":\"" + t + "\",\"uses\":[],\"note\":\"n\"}")) + "]}";
+
+    [Fact]
+    public async Task ASkillWithNoDetailsCanBeConnectedToWorkTheJobAlreadyDescribes()
+    {
+        var model = new FakeModel(Options("Ran the nightly batch jobs on Kubernetes instead of a cron host"));
+        var result = await new JobBulletWriter(model).NewBulletsAsync(Request("Kubernetes"));
+
+        Assert.Single(result.Options);
+        Assert.Contains("The person says they have used Kubernetes (no details given)", model.User);
+        Assert.Contains("write a bullet that names that skill in connection with a task one of the existing bullets already describes", model.System);
+        Assert.Contains("- Moved nightly batch jobs from a cron host to scheduled workers", model.User); // the work it may be tied to
+        Assert.Contains("Requirements", model.User); // and the job description is there for the wording
+    }
+
+    [Fact]
+    public async Task ButNothingCanBeInventedAroundIt()
+    {
+        var model = new FakeModel(Options(
+            "Ran the nightly batch jobs on Kubernetes across 12 clusters",            // an invented number
+            "Led the move of the nightly batch jobs to Kubernetes",                    // a bigger role
+            "Ran the nightly batch jobs on Kubernetes and Terraform modules",          // a second skill nobody claimed
+            "Ran the nightly batch jobs on Kubernetes for Fabrikam"));                 // a name nobody wrote
+        var result = await new JobBulletWriter(model).NewBulletsAsync(Request("Kubernetes"));
+
+        Assert.Empty(result.Options);
+        Assert.Equal(4, result.Rejected.Count);
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("12")));
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("led")));
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("Terraform")));
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("Fabrikam")));
+    }
+
+    [Fact]
+    public async Task SeveralClaimedSkillsAreEachAllowed()
+    {
+        var model = new FakeModel(Options("Ran the nightly batch jobs on Kubernetes, with the infrastructure defined in Terraform"));
+        var result = await new JobBulletWriter(model).NewBulletsAsync(Request("Kubernetes", "Terraform"));
+        Assert.Single(result.Options);
+    }
+
+    [Fact]
+    public async Task ASkillThatWasNotClaimedStillCannotAppear()
+    {
+        var model = new FakeModel(Options("Ran the nightly batch jobs on Kubernetes"));
+        var result = await new JobBulletWriter(model).NewBulletsAsync(Request("Terraform")); // claimed Terraform, the model wrote Kubernetes
+        Assert.Empty(result.Options);
+        Assert.Contains(result.Rejected[0].Problems, p => p.Contains("Kubernetes"));
+    }
+}

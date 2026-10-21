@@ -252,18 +252,30 @@ public class ResumeDocxExportTests : IDisposable
 public class DownloadNameTests
 {
     [Theory]
-    [InlineData("Alex Rivera\nSenior Engineer\n", "Northwind Labs", "Alex Rivera - Resume - Northwind Labs.docx")]
-    [InlineData("Alex Rivera\n", "", "Alex Rivera - Resume.docx")]
-    [InlineData("## Experience\n- built things\n", "Acme/Co: West", "Resume - AcmeCo West.docx")]
-    [InlineData("alex@example.com | 555-0100\n", "Acme", "Resume - Acme.docx")]
-    [InlineData("", "Acme", "Resume - Acme.docx")]
-    public void SuggestsANameFromThePersonAndTheCompany(string resume, string company, string expected) =>
-        Assert.Equal(expected, DownloadNames.Suggest(resume, company).Replace("  ", " "));
+    [InlineData("Alex Rivera\nSenior Engineer\n", "Alex_Rivera_Resume.docx")]
+    [InlineData("Priya Raman\nSenior Software Engineer\n", "Priya_Raman_Resume.docx")]
+    [InlineData("Priya K. Raman\n", "Priya_Raman_Resume.docx")]
+    [InlineData("Dr. Alex Q. Rivera Jr.\n", "Alex_Rivera_Resume.docx")]
+    [InlineData("José Núñez-García, PMP\n", "Jose_Nunez-Garcia_Resume.docx")]
+    [InlineData("Conan O'Brien\n", "Conan_OBrien_Resume.docx")]
+    [InlineData("Madonna\n", "Madonna_Resume.docx")]
+    [InlineData("## Experience\n- built things\n", "Resume.docx")]
+    [InlineData("alex@example.com | 555-0100\n", "Resume.docx")]
+    [InlineData("", "Resume.docx")]
+    public void SuggestsFirstLastResumeWithUnderscores(string resume, string expected) =>
+        Assert.Equal(expected, DownloadNames.Suggest(resume));
 
-    [Fact]
-    public void TheNameIsNeverAnIllegalFileName() =>
-        Assert.DoesNotContain(DownloadNames.Suggest("Alex Rivera\n", "A<B>C|D?").ToCharArray(), c => Path.GetInvalidFileNameChars().Contains(c));
-
+    [Theory]
+    [InlineData("Alex Rivera\n")]
+    [InlineData("Mary Ann Van Der Berg\n")]
+    [InlineData("<Alex>|? Ri:vera\n")]
+    public void TheNameHasNoSpacesPunctuationOrIllegalCharacters(string resume)
+    {
+        var name = DownloadNames.Suggest(resume);
+        Assert.DoesNotContain(' ', name);
+        Assert.DoesNotContain(name.ToCharArray(), c => Path.GetInvalidFileNameChars().Contains(c));
+        Assert.Matches("^[A-Za-z0-9_-]+\\.docx$", name);
+    }
     [Theory]
     [InlineData("Alex Rivera\nrest", "Alex Rivera")]
     [InlineData("# Alex Rivera\nrest", "Alex Rivera")]

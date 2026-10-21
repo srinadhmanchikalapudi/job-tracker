@@ -65,6 +65,7 @@ public sealed class JobBulletWriter(IChatModel model, SkillLexicon? lexicon = nu
         - Use only facts that are in <existing_bullets> or <facts>. Never add a number, a tool, an employer, a team size, a scope, a result or a responsibility that is not there.
         - If <facts> says (none), you may only split, recombine or re-emphasise what the existing bullets already say, for example giving a skill or result that sits inside a long bullet a line of its own. Do not invent anything.
         - You may use a skill name from <skills_to_emphasise> only if it is already in the existing bullets or the person's <facts> say they used it.
+        - If <facts> says a skill was used with no details, write a bullet that names that skill in connection with a task one of the existing bullets already describes, in that bullet's own words for the task. Add no scale, number, result or tool beyond what the existing bullets and <facts> say. The person will check it is true before they add it.
         - Each new bullet must read differently from every existing bullet. Never copy one.
         - One line, no first person, past tense unless the job is current, at most 30 words, no bullet symbol.
         - Give up to three options, or none if nothing honest can be added.
@@ -172,31 +173,17 @@ public sealed class JobBulletWriter(IChatModel model, SkillLexicon? lexicon = nu
         return new NewBulletsResult(options, rejected, facts.Count == 0);
     }
 
-    /// <summary>Reads {"bullets":[{"n":1,"text":"..."}]}, tolerating a code fence or an intro sentence.</summary>
+    /// <summary>Reads {"bullets":[{"n":1,"text":"..."}]}, however the model dressed it. An explanation instead of JSON is an error that says what the model said.</summary>
     public static IReadOnlyList<(int Number, string Text, string Note)> ParseJobBullets(string reply)
     {
-        var start = reply.IndexOf('{');
-        var end = reply.LastIndexOf('}');
-        if (start < 0 || end <= start)
-            throw new ModelException("The AI answered in a form this app could not read. Try again.");
-
-        JsonNode? root;
-        try
-        {
-            root = JsonNode.Parse(reply[start..(end + 1)]);
-        }
-        catch (JsonException)
-        {
-            throw new ModelException("The AI answered in a form this app could not read. Try again.");
-        }
-
+        var root = ModelJson.Find(reply);
         var result = new List<(int, string, string)>();
-        foreach (var item in (root?["bullets"] as JsonArray) ?? [])
+        foreach (var item in ModelJson.Items(root, "bullets", "options", "rewrites", "results"))
         {
-            var text = item?["text"]?.GetValue<string>()?.Trim();
-            var n = item?["n"] is JsonValue v && v.TryGetValue<int>(out var number) ? number : 0;
+            var text = ModelJson.TextOf(item);
+            var n = ModelJson.Member(item, "n") is JsonValue v && (v.TryGetValue<int>(out var number) || (v.TryGetValue<string>(out var s) && int.TryParse(s, out number))) ? number : 0;
             if (n > 0 && !string.IsNullOrWhiteSpace(text))
-                result.Add((n, BulletText.Clean(text), item?["note"]?.GetValue<string>()?.Trim() ?? ""));
+                result.Add((n, BulletText.Clean(text), ModelJson.StringOf(item, "note", "why", "reason") ?? ""));
         }
 
         return result;
