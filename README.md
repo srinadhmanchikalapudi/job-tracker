@@ -19,7 +19,7 @@
 <p align="center">
   <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4">
   <img alt="WPF" src="https://img.shields.io/badge/UI-WPF%20%28MVVM%29-0078D4">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-588%20passing-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-594%20passing-2EA043">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
   <a href="https://github.com/srinadhmanchikalapudi/job-tracker/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/srinadhmanchikalapudi/job-tracker?label=release"></a>

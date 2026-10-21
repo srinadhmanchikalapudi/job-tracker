@@ -111,12 +111,17 @@
                 <CheckBox Content="Look for a new version when the app starts" Margin="0,8,0,0"
                           IsChecked="{Binding CheckForUpdates}"
                           ToolTip="One small request to GitHub, at most once a day. Nothing is installed without asking." />
-                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                    <Button Style="{StaticResource GhostButton}" Content="Check for updates now"
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Style="{StaticResource GhostButton}" Content="Check for updates now" VerticalAlignment="Top"
                             Command="{Binding CheckForUpdatesNowCommand}" />
-                    <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" Margin="12,0,0,0"
-                               Style="{StaticResource SubtleText}" TextTrimming="CharacterEllipsis" />
-                </StackPanel>
+                    <!-- Wraps, so a longer sentence (for example when GitHub is limiting requests) is never cut off -->
+                    <TextBlock Grid.Column="1" Text="{Binding UpdateStatusText}" VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"
+                               Style="{StaticResource SubtleText}" />
+                </Grid>
             </StackPanel>
         </Border>
 

@@ -7,7 +7,7 @@ starred bullets and in-app updates from GitHub Releases. Read `README.md` for th
 
 ```
 dotnet run --project src/JobTracker.App
-dotnet test                                  # all tests (588 at last count)
+dotnet test                                  # all tests (594 at last count)
 dotnet build JobTracker.slnx -c Release      # use -c Release when the user has the Debug exe running
 powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Version 1.0.0 -Installer
 ```
@@ -43,3 +43,4 @@ powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Version 1.0.0 -Insta
 - **Removing an application (`ApplicationStore.Remove`, `RecycleBin`, `MainViewModel.RemoveApplication`).** The folder goes to the Recycle Bin (`SHFileOperation`, allow-undo), never a permanent delete. `Remove` only accepts `<root>\<company>\<application>` that contains `meta.json`, and an empty company folder is removed after it. `ConfirmRemove` defaults to no and `DisposeFolder` can be swapped in tests, so tests never touch the real Recycle Bin. Starred bullets are kept.
 - **AI waits (`TailorVM.AskAsync`).** Every model call takes a `CancellationToken`; the bottom bar shows `BusyText` (seconds elapsed) and a Stop button. Keep any new long call on this path so a wait is visible and can be stopped.
 - **"Write a bullet for each skill I tick" (`NewBulletsRequest.FromRole`, `JobBulletWriter.NewBulletsFromRoleSystemPrompt`).** Off by default. It is the person's word that they used each ticked skill; the model may describe the kind of work the job involves for it, but `BulletVerifier` still rejects numbers, names, unticked skills and bigger-role verbs, and in this mode (`BulletContext.NoNewResults`) any result word ("cutting", "improving") that is not already in the bullets or notes. The window labels these as drafts to check. Do not relax those checks: the whole point of the app is that nothing is invented.
+- **Update checks and GitHub's anonymous limit (`GitHubUpdateChecker`).** GitHub lets a program without an account call its API about 60 times an hour per connection. When it answers 403/429 the checker remembers when it lifts (`Retry-After` or `X-RateLimit-Reset`), stops asking the API until then, and reads the newest version from the release web page instead (no checksum, so such an update is downloaded from the page, not installed in place). If that fails too, the message says when to try again. **Always set `JOBTRACKER_NO_UPDATE_CHECK=1` when running the app or a harness from a script**: a run with a throwaway settings file otherwise checks on every start and uses up the person's quota.

@@ -3,6 +3,10 @@
 One section per version, newest first. Written for the people who use the app: they are shown inside the program (Settings, the update bar,
 and once after each update) and become the notes on the GitHub release. `tools/publish.ps1` refuses to build a version that has no section here.
 
+## 1.4.3
+
+- **Checking for updates no longer gets stuck when GitHub says "limiting requests".** GitHub only lets a program without an account ask about 60 times an hour. When that is used up, Job Tracker now finds the newest version from the release page instead, and stops asking until GitHub allows it, so clicking **Check for updates now** again and again does no harm. If nothing works, the message says when to try again. An update found this way opens its download page instead of installing from inside the app.
+- The message under **Check for updates now** is no longer cut off at the edge of the Settings window.
 ## 1.4.2
 
 - **Your upload-ready Word file now follows your resume by itself.** The moment you save an application, choose a resume (**Use as my resume**) or edit it, the file in the application's folder is made again, named like `Priya_Raman_Resume.docx`. If you attached a Word resume and nothing changed, it is a copy of it, renamed. When you choose a different resume, the old file is deleted and a new one is made from the one you chose, so the file in the folder always matches your resume in use. Only a file Job Tracker made is ever replaced.
