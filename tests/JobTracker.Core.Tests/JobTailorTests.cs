@@ -378,3 +378,103 @@ public class SkillClaimedWithoutDetailsTests
         Assert.Contains(result.Rejected[0].Problems, p => p.Contains("Kubernetes"));
     }
 }
+
+public class DraftFromRoleTests
+{
+    private const string Resume = "## Experience\nContoso Insurance, Senior Engineer\n- Cut SQL Server query latency by 63% by redesigning indexes in the claims API\n- Built C# services for claim intake\n";
+    private const string Jd = "## What you will do\n- Deploy and operate services on GCP with dashboards and alerts in Splunk\n- Store claim documents in MongoDB\n";
+
+    private static NewBulletsRequest Request(bool fromRole, params string[] claimed) =>
+        new(ResumeStructure.Jobs(Resume).Single(), Resume, Jd, "Northwind Labs", claimed, claimed.Select(c => new AttestedSkill { Skill = c, Note = "" }).ToList(), "", fromRole);
+
+    private static string Options(params string[] texts) =>
+        "{\"options\":[" + string.Join(",", texts.Select(t => "{\"text\":\"" + t + "\",\"uses\":[],\"note\":\"n\"}")) + "]}";
+
+    [Fact]
+    public async Task TheRolePromptIsUsedOnlyWhenAskedForAndSomethingWasClaimed()
+    {
+        var asked = new FakeModel(Options("Deployed the claims services to GCP"));
+        await new JobBulletWriter(asked).NewBulletsAsync(Request(true, "GCP", "Splunk", "MongoDB"));
+        Assert.Contains("confirmed that they used every skill", asked.System);
+        Assert.Contains("one option for each skill", asked.System);
+        foreach (var skill in new[] { "GCP", "Splunk", "MongoDB" })
+            Assert.Contains($"The person says they have used {skill} (no details given)", asked.User);
+        Assert.Contains("Deploy and operate services on GCP", asked.User); // the job description's work is what it draws on
+
+        var notAsked = new FakeModel(Options("Deployed the claims services to GCP"));
+        await new JobBulletWriter(notAsked).NewBulletsAsync(Request(false, "GCP"));
+        Assert.DoesNotContain("confirmed that they used every skill", notAsked.System);
+
+        var nothingClaimed = new FakeModel(Options("Built more C# services for claim intake"));
+        await new JobBulletWriter(nothingClaimed).NewBulletsAsync(Request(true));
+        Assert.DoesNotContain("confirmed that they used every skill", nothingClaimed.System);
+    }
+
+    [Fact]
+    public async Task ABulletForASkillNoExistingBulletMentionsIsAcceptedWhenTheSkillWasClaimed()
+    {
+        var model = new FakeModel(Options(
+            "Deployed and operated the claims services on GCP",
+            "Built dashboards and alerts in Splunk for the claims services",
+            "Stored claim documents in MongoDB"));
+        var result = await new JobBulletWriter(model).NewBulletsAsync(Request(true, "GCP", "Splunk", "MongoDB"));
+
+        Assert.Equal(3, result.Options.Count);
+        Assert.Empty(result.Rejected);
+    }
+
+    [Fact]
+    public async Task EveryCheckStillAppliesInThisMode()
+    {
+        var model = new FakeModel(Options(
+            "Deployed and operated 40 claims services on GCP",                  // an invented number
+            "Led the move of the claims services to GCP",                       // a bigger role
+            "Deployed the claims services to GCP, cutting costs",               // a result nobody stated, even without a figure
+            "Deployed the claims services to GCP and Kubernetes",               // a skill nobody claimed
+            "Deployed the claims services to GCP for Fabrikam"));               // a name nobody wrote
+        var result = await new JobBulletWriter(model).NewBulletsAsync(Request(true, "GCP"));
+
+        Assert.Empty(result.Options);
+        Assert.Equal(5, result.Rejected.Count);
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("claims a result") && p.Contains("cutting")));
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("40")));
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("led")));
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("Kubernetes")));
+        Assert.Contains(result.Rejected, r => r.Problems.Any(p => p.Contains("Fabrikam")));
+    }
+
+    [Fact]
+    public async Task ASkillThatWasNotTickedStillCannotAppearEvenInThisMode()
+    {
+        var model = new FakeModel(Options("Stored claim documents in MongoDB"));
+        var result = await new JobBulletWriter(model).NewBulletsAsync(Request(true, "GCP")); // ticked GCP, the model wrote MongoDB
+        Assert.Empty(result.Options);
+        Assert.Contains(result.Rejected[0].Problems, p => p.Contains("MongoDB"));
+    }
+
+    [Fact]
+    public void ThePromptForbidsNumbersResultsNamesAndBiggerRoles()
+    {
+        var prompt = JobBulletWriter.NewBulletsFromRoleSystemPrompt;
+        Assert.Contains("Never add a number", prompt);
+        Assert.Contains("result, outcome or improvement", prompt);
+        Assert.Contains("no led, managed, owned", prompt);
+        Assert.Contains("never name any tool or skill that is not in <existing_bullets> or <facts>", prompt);
+    }
+
+    [Fact]
+    public async Task AResultIsAcceptedOnlyWhenTheJobsOwnBulletsAlreadySayIt_OrOutsideThisMode()
+    {
+        // "Cut" is in an existing bullet ("Cut SQL Server query latency..."), so the word is the person's own.
+        var inMode = await new JobBulletWriter(new FakeModel(Options("Cut the time to deploy the claims services to GCP"))).NewBulletsAsync(Request(true, "GCP"));
+        Assert.Single(inMode.Options);
+
+        // Without the mode a result word is not policed (the person gave the details, or the bullet only restates one).
+        var outside = await new JobBulletWriter(new FakeModel(Options("Deployed the claims services to GCP, improving reliability"))).NewBulletsAsync(Request(false, "GCP"));
+        Assert.Single(outside.Options);
+
+        var rejected = await new JobBulletWriter(new FakeModel(Options("Deployed the claims services to GCP, improving reliability"))).NewBulletsAsync(Request(true, "GCP"));
+        Assert.Empty(rejected.Options);
+        Assert.Contains(rejected.Rejected[0].Problems, p => p.Contains("improving"));
+    }
+}

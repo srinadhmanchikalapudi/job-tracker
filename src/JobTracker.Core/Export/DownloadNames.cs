@@ -22,6 +22,9 @@ public static class DownloadNames
         return FolderNamer.Sanitize(name) + ".docx";
     }
 
+    /// <summary>The name for a preview of a saved version that is not the resume in use yet: "Priya_Raman_Resume_v3.docx".</summary>
+    public static string ForVersion(string resumeText, int number) => Suggest(resumeText)[..^".docx".Length] + $"_v{number}.docx";
+
     /// <summary>First and last name from the line at the top of the resume, cleaned for a file name. A middle name or initial is left out.</summary>
     public static IReadOnlyList<string> NameParts(string person)
     {

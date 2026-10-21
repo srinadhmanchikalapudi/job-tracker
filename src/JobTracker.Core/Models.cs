@@ -44,6 +44,12 @@ public sealed class ApplicationMeta
     public ApplicationStatus Status { get; set; } = ApplicationStatus.Applied;
     public bool Starred { get; set; }
     public JobType JobType { get; set; } = JobType.FullTime;
+
+    /// <summary>
+    /// The name of the upload-ready Word file this app made for the resume in use (First_Last_Resume.docx), so that when the resume or the name changes the
+    /// old one can be replaced and nothing else in the folder is ever touched.
+    /// </summary>
+    public string? ResumeWordFile { get; set; }
 }
 
 /// <summary>An application folder on disk plus its metadata. Text files are read on demand.</summary>

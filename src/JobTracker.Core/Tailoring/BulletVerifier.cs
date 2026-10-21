@@ -9,8 +9,12 @@ namespace JobTracker.Core.Tailoring;
 /// <param name="ClaimedSkills">Skills the person said they have used (their notes are in <paramref name="Facts"/>).</param>
 /// <param name="TargetCompany">The company being applied to: a bullet about past work never names it.</param>
 /// <param name="Existing">For a brand-new bullet: the bullets the job already has, so a copy of one is rejected.</param>
+/// <param name="NoNewResults">
+/// For a bullet drafted from the role alone: the person said they used a skill, not what it achieved, so a result ("cutting", "improving") that is not
+/// already in their bullets or notes is rejected, with or without a figure.
+/// </param>
 public sealed record BulletContext(string Original, IReadOnlyList<string> Facts, string ResumeText, IReadOnlyList<string> ClaimedSkills, string TargetCompany = "",
-    IReadOnlyList<string>? Existing = null);
+    IReadOnlyList<string>? Existing = null, bool NoNewResults = false);
 
 /// <summary>
 /// Checks a model's proposed bullet before the person ever sees it. The model proposes; this decides. A proposal is rejected when it adds a number,
@@ -27,6 +31,14 @@ public static class BulletVerifier
     [
         "led", "lead", "leading", "managed", "manage", "managing", "owned", "own", "owning", "architected", "founded", "directed", "spearheaded",
         "headed", "oversaw", "supervised", "mentored", "hired", "launched", "pioneered",
+    ];
+
+    // Words that say something got better, faster, cheaper or smaller: an outcome, not a task.
+    private static readonly string[] ResultWords =
+    [
+        "reduced", "reducing", "reduce", "improved", "improving", "improve", "increased", "increasing", "increase", "cut", "cutting", "saved", "saving",
+        "boosted", "boosting", "accelerated", "accelerating", "decreased", "decreasing", "eliminated", "eliminating", "lowered", "lowering", "faster",
+        "improving", "enhancing", "enhanced", "streamlined", "streamlining", "minimizing", "minimised", "minimized", "maximizing", "maximized",
     ];
 
     private static readonly string[] FirstPerson = ["i ", "i'm ", "i’ve ", "my ", "we ", "our "];
@@ -97,6 +109,11 @@ public static class BulletVerifier
         var sourceWords = Words(sources);
         foreach (var verb in Words(text).Where(w => BiggerRoleVerbs.Contains(w)).Distinct().Where(v => !sourceWords.Contains(v)))
             problems.Add($"It says you \"{verb}\", which is a bigger role than your bullet claims.");
+
+        // Results: when the bullet is drafted from the role alone, no outcome the person did not state.
+        if (context.NoNewResults)
+            foreach (var word in Words(text).Where(w => ResultWords.Contains(w)).Distinct().Where(w => !sourceWords.Contains(w)))
+                problems.Add($"It claims a result (\u201c{word}\u201d) that is not in your bullets or your notes.");
 
         return problems.Distinct().ToList();
     }
