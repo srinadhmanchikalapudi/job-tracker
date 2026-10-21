@@ -21,11 +21,22 @@ public sealed partial class BulletRowVM(ResumeBullet bullet, bool isChanged, boo
 }
 
 /// <summary>A skill from the job description that a rewrite could speak to. Only skills the resume says, or the person has claimed, are offered.</summary>
-public sealed partial class SkillPickVM(string skill, bool isClaimedOnly) : ObservableObject
+public sealed partial class SkillPickVM(string skill, bool isClaimedOnly, bool isMissing = false, string tag = "", string evidence = "") : ObservableObject
 {
     public string Skill { get; } = skill;
     public bool IsClaimedOnly { get; } = isClaimedOnly;
-    public string Tooltip => IsClaimedOnly ? "You said you have used this. It is used only in the way your note describes." : "Already in your resume.";
+
+    /// <summary>A keyword the job description asks for that the resume does not say. It is only offered, never assumed: picking it means "I really used this".</summary>
+    public bool IsMissing { get; } = isMissing;
+
+    /// <summary>"required" or "nice to have" when the job description marks it.</summary>
+    public string Tag { get; } = tag;
+
+    public bool HasTag => Tag.Length > 0;
+
+    public string Tooltip => IsMissing
+        ? "Not in your resume. Pick it only if you really used it in this job." + (HasTag ? $" The job description marks it {Tag}." : "") + (evidence.Length > 0 ? $"\nJob description: {evidence}" : "")
+        : IsClaimedOnly ? "You said you have used this. It is used only in the way your note describes." : "Already in your resume.";
 
     [ObservableProperty] private bool _isPicked;
 }
@@ -99,15 +110,41 @@ public sealed partial class TailorVM : ObservableObject
         BulletsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(BulletRowVM.JobHeader)));
         BulletsView.Filter = o => SelectedFilter?.Header is not { } header || ((BulletRowVM)o).JobHeader == header;
 
-        var usable = match.Report.Matches.Where(m => m.Status != MatchStatus.Missing).ToList();
-        foreach (var m in usable)
-        {
-            Skills.Add(new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested));
-            JobSkills.Add(new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested));
-            NewSkills.Add(new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested));
-        }
-
         Rebuild(selectLine: null, selectJobIndex: 0);
+    }
+
+    /// <summary>
+    /// The skills the job description asks for, sorted by what the resume says now: the ones it says (or the person claimed) can be pointed at; the
+    /// ones it does not say are offered as keywords to pick only if they are true. Run again after every change, so a keyword that has just been
+    /// written into a bullet moves to the first group. Anything already ticked stays ticked.
+    /// </summary>
+    private void RefreshKeywords()
+    {
+        var report = ResumeMatcher.Match(JdAnalyzer.Analyze(_jdText), Session.Text, _match.State);
+        var usable = report.Matches.Where(m => m.Status != MatchStatus.Missing).ToList();
+        var missing = report.Matches.Where(m => m.Status == MatchStatus.Missing).ToList();
+
+        Sync(Skills, usable.Select(m => new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested)));
+        Sync(JobSkills, usable.Select(m => new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested)));
+        Sync(NewSkills, usable.Select(m => new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested)));
+        Sync(NewMissingSkills, missing.Select(m => new SkillPickVM(m.Term.Skill, false, isMissing: true,
+            tag: m.Term.Weight switch { TermWeight.Required => "required", TermWeight.Preferred => "nice to have", _ => "" }, evidence: m.Term.Evidence)));
+        foreach (var skill in NewSkills.Concat(NewMissingSkills))
+            skill.PropertyChanged += (_, _) => OnPropertyChanged(nameof(AnswersHint));
+        OnPropertyChanged(nameof(HasSkills));
+        OnPropertyChanged(nameof(HasNewMissing));
+        OnPropertyChanged(nameof(AnswersHint));
+    }
+
+    private static void Sync(ObservableCollection<SkillPickVM> target, IEnumerable<SkillPickVM> wanted)
+    {
+        var ticked = target.Where(s => s.IsPicked).Select(s => s.Skill).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        target.Clear();
+        foreach (var skill in wanted)
+        {
+            skill.IsPicked = ticked.Contains(skill.Skill);
+            target.Add(skill);
+        }
     }
 
     public TailorSession Session { get; }
@@ -126,6 +163,11 @@ public sealed partial class TailorVM : ObservableObject
     public ObservableCollection<SkillPickVM> Skills { get; } = [];
     public ObservableCollection<SkillPickVM> JobSkills { get; } = [];
     public ObservableCollection<SkillPickVM> NewSkills { get; } = [];
+
+    /// <summary>Keywords from the job description that the resume does not say, offered on the Add new bullets tab.</summary>
+    public ObservableCollection<SkillPickVM> NewMissingSkills { get; } = [];
+
+    public bool HasNewMissing => NewMissingSkills.Count > 0;
 
     // ---- shared
     [ObservableProperty]
@@ -239,9 +281,12 @@ public sealed partial class TailorVM : ObservableObject
     public bool CanGenerateNew => HasJob && !IsBusy;
     public bool HasNewRejected => NewRejectedSummary.Length > 0;
     public bool HasNewNote => NewNote.Length > 0;
-    public string AnswersHint => Answers.Trim().Length == 0
-        ? "Nothing typed: new bullets will only restate what this job's bullets already say, in a different way."
-        : "New bullets will be written from what you typed here and from this job's bullets.";
+    public string AnswersHint =>
+        Answers.Trim().Length > 0 && !AnswerCheck.SkillsOnly(Answers, out _)
+            ? "New bullets will be written from what you typed here and from this job's bullets."
+            : Answers.Trim().Length > 0 || NewMissingSkills.Any(s => s.IsPicked)
+                ? "Skill only: each bullet will tie it to work this job's bullets already describe, and add nothing else. Check it is true before you add it."
+                : "Nothing typed: new bullets will only restate what this job's bullets already say, in a different way.";
 
     partial void OnNewRejectedSummaryChanged(string value) => OnPropertyChanged(nameof(HasNewRejected));
     partial void OnNewNoteChanged(string value) => OnPropertyChanged(nameof(HasNewNote));
@@ -276,6 +321,7 @@ public sealed partial class TailorVM : ObservableObject
         SelectedBullet = selectLine is { } line ? Bullets.FirstOrDefault(b => b.LineNumber == line) : null;
         SelectedJob = Jobs.Count == 0 ? null : Jobs[Math.Clamp(selectJobIndex, 0, Jobs.Count - 1)];
         ChangeCount = Session.Changes.Count;
+        RefreshKeywords();
         OnPropertyChanged(nameof(HasJobs));
         OnPropertyChanged(nameof(ChangesText));
         OnPropertyChanged(nameof(CanSave));
@@ -298,29 +344,61 @@ public sealed partial class TailorVM : ObservableObject
     /// Asks the model without freezing the window, and shows the answer on the window's thread. The whole sequence runs inside the dispatcher, so
     /// every step after the wait is back on that thread whatever thread the caller was on, and the command finishes there too.
     /// </summary>
-    private Task AskAsync<T>(Func<Task<T>> call, Action<string> setStatus, Action<T> show, string asking) =>
+    private Task AskAsync<T>(Func<CancellationToken, Task<T>> call, Action<string> setStatus, Action<T> show, string asking) =>
         _dispatcher.InvokeAsync(async () =>
         {
+            using var cancel = new CancellationTokenSource();
+            _cancel = cancel;
+            var started = DateTime.UtcNow;
+            // A model can take most of a minute. This line, in the always-visible bottom bar, says it is working and for how long, so a wait is never
+            // mistaken for a frozen window, and Stop gives the window back at once.
+            void Tick() => BusyText = $"{asking} {(int)(DateTime.UtcNow - started).TotalSeconds} s. This can take up to a minute.";
+            var clock = new DispatcherTimer(DispatcherPriority.Normal, _dispatcher) { Interval = TimeSpan.FromSeconds(1) };
+            clock.Tick += (_, _) => Tick();
             IsBusy = true;
+            Tick();
+            clock.Start();
             setStatus(asking);
 
             T? result = default;
             string? error = null;
+            var stopped = false;
             try
             {
-                result = await Task.Run(call);
+                result = await Task.Run(() => call(cancel.Token), cancel.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                stopped = true;
             }
             catch (ModelException ex)
             {
                 error = ex.Message;
             }
+            finally
+            {
+                clock.Stop();
+                _cancel = null;
+                IsBusy = false;
+                BusyText = "";
+            }
 
-            IsBusy = false;
-            if (error is not null)
+            if (stopped)
+                setStatus("Stopped. Nothing was added.");
+            else if (error is not null)
                 setStatus(error);
             else
                 show(result!);
         }).Task.Unwrap();
+
+    private CancellationTokenSource? _cancel;
+
+    /// <summary>What the bottom bar says while the model is being asked: what, and for how many seconds.</summary>
+    [ObservableProperty] private string _busyText = "";
+
+    /// <summary>Gives up waiting for the model. The window is usable again straight away.</summary>
+    [RelayCommand]
+    private void Stop() => _cancel?.Cancel();
     // ---------------------------------------------------------------- tab 1: one bullet
 
     [RelayCommand]
@@ -342,7 +420,7 @@ public sealed partial class TailorVM : ObservableObject
         Options.Clear();
         RejectedSummary = "";
         HasResult = false;
-        await AskAsync(() => new BulletRewriter(model).RewriteAsync(request), s => Status = s, ShowResult, $"Asking {model.Provider}…");
+        await AskAsync(ct => new BulletRewriter(model).RewriteAsync(request, ct), s => Status = s, ShowResult, $"Asking {model.Provider}…");
     }
 
     public void ShowResult(RewriteResult result)
@@ -396,7 +474,7 @@ public sealed partial class TailorVM : ObservableObject
         JobOptions.Clear();
         JobRejectedSummary = "";
         HasJobResult = false;
-        await AskAsync(() => new JobBulletWriter(model).RewriteJobAsync(request), s => JobStatus = s, ShowJobResult, $"Asking {model.Provider}…");
+        await AskAsync(ct => new JobBulletWriter(model).RewriteJobAsync(request, ct), s => JobStatus = s, ShowJobResult, $"Asking {model.Provider}…");
     }
 
     public void ShowJobResult(JobRewriteResult result)
@@ -441,6 +519,33 @@ public sealed partial class TailorVM : ObservableObject
     {
         if (SelectedJob is not { } job)
             return;
+
+        var (picked, claimed) = Picks(NewSkills);
+
+        // A skill claimed without saying what was done with it: a keyword ticked above, or a skill typed on its own ("Kubernetes"). It is the person's
+        // word that they used it; the bullets may tie it to work this job already describes, and the person is told to check each one.
+        var claims = new List<AttestedSkill>(claimed);
+        var typedSkills = AnswerCheck.SkillsOnly(Answers, out var typed) ? typed : [];
+        foreach (var skill in NewMissingSkills.Where(s => s.IsPicked).Select(s => s.Skill).Concat(typedSkills))
+        {
+            if (!claims.Any(c => string.Equals(c.Skill, skill, StringComparison.OrdinalIgnoreCase)))
+                claims.Add(new AttestedSkill { Skill = skill, Note = "" });
+            if (!picked.Contains(skill, StringComparer.OrdinalIgnoreCase))
+                picked.Add(skill);
+        }
+
+        var answers = typedSkills.Count > 0 ? "" : Answers; // the typed words were the skills, not an account of what was done
+        var withoutDetails = claims.Where(c => c.Note.Trim().Length == 0).Select(c => c.Skill).ToList();
+
+        // Something too short to write from, that is not a skill either ("banana"): say so before asking anyone anything.
+        if (AnswerCheck.IsTooThin(Answers) && claims.Count == 0)
+        {
+            NewOptions.Clear();
+            NewNote = "";
+            NewStatus = AnswerCheck.ThinMessage(Answers);
+            return;
+        }
+
         var model = PrepareModel(out var problem);
         if (model is null)
         {
@@ -448,15 +553,18 @@ public sealed partial class TailorVM : ObservableObject
             return;
         }
 
-        var (picked, claimed) = Picks(NewSkills);
-        var request = new NewBulletsRequest(job.Job, Session.Text, _jdText, Company, picked, claimed, Answers);
+        var request = new NewBulletsRequest(job.Job, Session.Text, _jdText, Company, picked, claims, answers);
+        _claimedWithoutDetails = withoutDetails;
 
         NewOptions.Clear();
         NewRejectedSummary = "";
         NewNote = "";
         HasNewResult = false;
-        await AskAsync(() => new JobBulletWriter(model).NewBulletsAsync(request), s => NewStatus = s, ShowNewResult, $"Asking {model.Provider}…");
+        await AskAsync(ct => new JobBulletWriter(model).NewBulletsAsync(request, ct), s => NewStatus = s, ShowNewResult, $"Asking {model.Provider}…");
     }
+
+    // The skills the current request claims without details, so the result can say how its bullets were made.
+    private List<string> _claimedWithoutDetails = [];
 
     public void ShowNewResult(NewBulletsResult result)
     {
@@ -465,15 +573,21 @@ public sealed partial class TailorVM : ObservableObject
             NewOptions.Add(new NewOptionVM(option, this));
 
         NewRejectedSummary = Dropped(result.Rejected);
-        NewNote = result.DraftedWithoutAnswers && result.Options.Count > 0
-            ? "You gave no details, so these only restate what this job already says. Read each one and add it only if it is true and worth a line of its own."
-            : "";
+        var skills = string.Join(", ", _claimedWithoutDetails);
+        NewNote = result.Options.Count == 0 ? ""
+            : _claimedWithoutDetails.Count > 0
+                ? $"You gave the skill ({skills}) but not what you did with it, so each bullet ties it to work this job's bullets already describe, and adds nothing else. I cannot know that is how you used it: read each one and add it only if it is true."
+                : result.DraftedWithoutAnswers
+                    ? "You gave no details, so these only restate what this job already says. Read each one and add it only if it is true and worth a line of its own."
+                    : "";
         HasNewResult = true;
         NewStatus = result.Options.Count > 0
             ? $"{result.Options.Count} new bullet{(result.Options.Count == 1 ? "" : "s")} passed the checks."
-            : result.DraftedWithoutAnswers
-                ? "Nothing new can be said honestly from this job's bullets alone. Type what you did in the box above and try again."
-                : "None of the suggestions passed the checks. Try again with more detail.";
+            : _claimedWithoutDetails.Count > 0
+                ? $"Nothing honest could be tied to this job's existing bullets. Say what you did with {skills} in a sentence, and try again."
+                : result.DraftedWithoutAnswers
+                    ? "Nothing new can be said honestly from this job's bullets alone. Type what you did in the box above, or tick a keyword you have used, and try again."
+                    : "None of the suggestions passed the checks. Try again with more detail.";
     }
 
     public void AddBullet(NewBulletOption option)

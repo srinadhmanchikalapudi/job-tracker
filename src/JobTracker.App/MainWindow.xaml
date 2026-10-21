@@ -85,24 +85,24 @@
             <!-- Filters -->
             <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="12,10" CornerRadius="10" Margin="22,0,22,10"
                     Visibility="{Binding IsApplicationsTab, Converter={StaticResource BoolToVis}}">
-                <WrapPanel VerticalAlignment="Center">
-                    <Grid Width="300" Margin="0,0,10,0">
+                <WrapPanel VerticalAlignment="Center" Margin="0,0,0,-8">
+                    <Grid Width="300" Margin="0,0,10,8">
                         <TextBox x:Name="SearchBox" Padding="32,6,8,6" VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  ToolTip="Ctrl+F. Every word must appear in the application." />
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE721;" Margin="11,0,0,0" Opacity="0.55"
                                    HorizontalAlignment="Left" IsHitTestVisible="False" />
                     </Grid>
-                    <TextBlock Text="in" VerticalAlignment="Center" Margin="0,0,8,0" Style="{StaticResource SubtleText}" />
-                    <ComboBox Width="92" Margin="0,0,14,0" ItemsSource="{x:Static vm:MainViewModel.Scopes}"
+                    <TextBlock Text="in" VerticalAlignment="Center" Margin="0,0,8,8" Style="{StaticResource SubtleText}" />
+                    <ComboBox Width="92" Margin="0,0,14,8" ItemsSource="{x:Static vm:MainViewModel.Scopes}"
                               SelectedItem="{Binding Scope}" ToolTip="Search the job description, the resume, or both" />
-                    <CheckBox Content="Matching lines only" VerticalAlignment="Center" Margin="0,0,14,0"
+                    <CheckBox Content="Matching lines only" VerticalAlignment="Center" Margin="0,0,14,8"
                               IsChecked="{Binding OnlyMatchingLines}" />
-                    <CheckBox Content="Starred only" VerticalAlignment="Center" Margin="0,0,14,0"
+                    <CheckBox Content="Starred only" VerticalAlignment="Center" Margin="0,0,14,8"
                               IsChecked="{Binding StarredOnly}" />
-                    <ComboBox Width="132" Margin="0,0,10,0" ItemsSource="{x:Static vm:MainViewModel.StatusFilterOptions}"
+                    <ComboBox Width="132" Margin="0,0,10,8" ItemsSource="{x:Static vm:MainViewModel.StatusFilterOptions}"
                               SelectedItem="{Binding StatusFilter}" />
-                    <Button Style="{StaticResource GhostButton}" Content="Clear" Padding="12,5"
+                    <Button Style="{StaticResource GhostButton}" Content="Clear" Padding="12,5" Margin="0,0,0,8"
                             Command="{Binding ClearSearchCommand}" />
                 </WrapPanel>
             </Border>
@@ -249,22 +249,22 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <WrapPanel Margin="0,14,0,0">
-                                            <ComboBox Width="132" Margin="0,0,10,0" VerticalContentAlignment="Center"
+                                        <WrapPanel Margin="0,14,0,-8">
+                                            <ComboBox Width="132" Margin="0,0,10,8" VerticalContentAlignment="Center"
                                                       ItemsSource="{x:Static vm:MainViewModel.Statuses}"
                                                       SelectedItem="{Binding Status}" />
-                                            <ComboBox Width="118" Margin="0,0,10,0" VerticalContentAlignment="Center"
+                                            <ComboBox Width="118" Margin="0,0,10,8" VerticalContentAlignment="Center"
                                                       ItemsSource="{x:Static vm:MainViewModel.JobTypeOptions}"
                                                       DisplayMemberPath="Label" SelectedValuePath="Value"
                                                       SelectedValue="{Binding JobType}"
                                                       ToolTip="Full-time or contract. Changing it moves the application to the other tab." />
-                                            <Border Style="{StaticResource Card}" CornerRadius="8" Padding="11,6" Margin="0,0,10,0">
+                                            <Border Style="{StaticResource Card}" CornerRadius="8" Padding="11,6" Margin="0,0,10,8">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE787;" Margin="0,0,8,0" Opacity="0.7" />
                                                     <TextBlock Text="{Binding DateText}" VerticalAlignment="Center" />
                                                 </StackPanel>
                                             </Border>
-                                            <Border Style="{StaticResource Card}" CornerRadius="8" Padding="11,6" Margin="0,0,10,0" ToolTip="{Binding PayTooltip}"
+                                            <Border Style="{StaticResource Card}" CornerRadius="8" Padding="11,6" Margin="0,0,10,8" ToolTip="{Binding PayTooltip}"
                                                     AutomationProperties.Name="Pay">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="Pay" Style="{StaticResource SubtleText}" Margin="0,0,8,0" VerticalAlignment="Center" />
@@ -282,7 +282,7 @@
                                                     </TextBlock>
                                                 </StackPanel>
                                             </Border>
-                                            <ToggleButton Style="{StaticResource GhostToggle}" Margin="0,0,10,0"
+                                            <ToggleButton Style="{StaticResource GhostToggle}" Margin="0,0,10,8"
                                                           IsChecked="{Binding IsStarred}"
                                                           ToolTip="Star the whole application so you can filter to it">
                                                 <StackPanel Orientation="Horizontal">
@@ -292,17 +292,25 @@
                                                 </StackPanel>
                                             </ToggleButton>
                                             <Button Style="{StaticResource GhostButton}" Command="{Binding OpenFolderCommand}"
-                                                    ToolTip="{Binding FolderPath}" Margin="0,0,10,0">
+                                                    ToolTip="{Binding FolderPath}" Margin="0,0,10,8">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE838;" Margin="0,0,8,0" />
                                                     <TextBlock Text="Open folder" />
                                                 </StackPanel>
                                             </Button>
-                                            <Button Style="{StaticResource GhostButton}" Command="{Binding OpenUrlCommand}"
+                                            <Button Style="{StaticResource GhostButton}" Command="{Binding OpenUrlCommand}" Margin="0,0,10,8"
                                                     Visibility="{Binding HasUrl, Converter={StaticResource BoolToVis}}">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE71B;" Margin="0,0,8,0" />
                                                     <TextBlock Text="Job link" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource GhostButton}" Command="{Binding RemoveCommand}" Margin="0,0,10,8"
+                                                    AutomationProperties.Name="Remove application"
+                                                    ToolTip="Remove this application. Its folder goes to the Recycle Bin, so you can get it back.">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" Foreground="#DC2626" Margin="0,0,8,0" />
+                                                    <TextBlock Text="Remove" />
                                                 </StackPanel>
                                             </Button>
                                         </WrapPanel>

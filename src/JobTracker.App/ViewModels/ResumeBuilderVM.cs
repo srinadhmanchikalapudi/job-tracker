@@ -399,6 +399,12 @@ public sealed partial class ResumeBuilderVM : ObservableObject
             return Task.CompletedTask;
         }
 
+        if (AnswerCheck.IsTooShort(Answers))
+        {
+            HelperStatus = AnswerCheck.ShortMessage(Answers);
+            return Task.CompletedTask;
+        }
+
         var model = AiAccess.Prepare(_main, ConfirmSend, out var problem);
         if (model is null)
         {
@@ -471,7 +477,7 @@ public sealed partial class ResumeBuilderVM : ObservableObject
             return null;
         }
 
-        return WordPreviews.Make(_main, ResumeBuilderFiles.Folder(_main.DataRoot), "", text, ResumeBuilderFiles.WordFile, "Your resume");
+        return WordPreviews.Make(_main, ResumeBuilderFiles.Folder(_main.DataRoot), text, "Your resume");
     }
 
     /// <summary>Deletes the resume and starts again with a blank one.</summary>

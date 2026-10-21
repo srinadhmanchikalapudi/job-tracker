@@ -30,6 +30,9 @@ public partial class ResumePreviewWindow : Window
         Title = "Word document: " + preview.Heading;
         NoteText.Text = preview.Export.Note;
         PathBox.Text = preview.Export.Path;
+        NameText.Inlines.Add(new System.Windows.Documents.Run("Ready to upload or attach: ") { Foreground = System.Windows.Media.Brushes.Gray });
+        NameText.Inlines.Add(new System.Windows.Documents.Run(preview.SuggestedName) { FontWeight = FontWeights.SemiBold });
+        NameText.Inlines.Add(new System.Windows.Documents.Run("  Select it in the folder and press Ctrl+C, or click Copy file.") { Foreground = System.Windows.Media.Brushes.Gray });
         StatusText.Text = preview.Export.Verified ? "Checked: the file says exactly what your resume says." : "";
 
         if (!preview.Export.Verified)
@@ -74,6 +77,21 @@ public partial class ResumePreviewWindow : Window
     {
         if (File.Exists(path))
             Process.Start(new ProcessStartInfo("explorer.exe") { ArgumentList = { "/select,", path } });
+    }
+
+    /// <summary>Puts the file itself on the clipboard, the same as selecting it in File Explorer and pressing Ctrl+C.</summary>
+    private void CopyFile_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var files = new System.Collections.Specialized.StringCollection { _preview.Export.Path };
+            Clipboard.SetFileDropList(files);
+            StatusText.Text = $"Copied {_preview.SuggestedName}. Paste it into an email or an upload box.";
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            StatusText.Text = "Windows would not let this program use the clipboard just now. Try again, or select the file in its folder and press Ctrl+C.";
+        }
     }
 
     private void OpenInWord_Click(object sender, RoutedEventArgs e)

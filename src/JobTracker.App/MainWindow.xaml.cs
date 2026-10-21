@@ -15,6 +15,7 @@ public partial class MainWindow : Window
         var settings = AppSettings.Load();
         _vm = new MainViewModel(settings);
         _vm.AttachUpdates(AppInfo.CreateUpdateService(settings));
+        _vm.ConfirmRemove = ConfirmRemove;
         DataContext = _vm;
         Loaded += async (_, _) =>
         {
@@ -38,11 +39,23 @@ public partial class MainWindow : Window
         base.OnClosing(e);
     }
 
+    /// <summary>The question before an application is removed. "No" is the default, so Enter or Escape keeps it.</summary>
+    private bool ConfirmRemove(ApplicationItemVM item, int starredBullets)
+    {
+        var text = $"{item.Company}, {item.Role} ({item.DateText})\n\n" +
+                   "Its folder, with the job description, resume, notes, saved versions and any files you added, will move to the Recycle Bin. " +
+                   "You can restore it from there." +
+                   (starredBullets > 0 ? $"\n\nThe {starredBullets} bullet{(starredBullets == 1 ? "" : "s")} you starred from it will stay in Starred bullets." : "");
+        return MessageBox.Show(this, text, "Remove this application?", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+    }
+
     private void NewApplication_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new NewApplicationWindow(_vm.DefaultNewJobType, () => _vm.BuiltResumeText) { Owner = this };
+        var dialog = new NewApplicationWindow(_vm.DefaultNewJobType, () => _vm.BuiltResumeText, _vm.FindSimilarJds) { Owner = this };
         if (dialog.ShowDialog() == true && dialog.Result is { } input)
             _vm.AddApplication(input);
+        else if (dialog.OpenExistingFolder is { } existing)
+            _vm.SelectByFolder(existing);
     }
 
     private void MyResume_Click(object sender, RoutedEventArgs e)

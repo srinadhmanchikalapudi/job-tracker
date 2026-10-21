@@ -26,7 +26,14 @@ public sealed partial class BulletVM(StarredBullet bullet, MainViewModel main)
     [RelayCommand]
     private void OpenApplication()
     {
-        main.SelectByFolder(Path.Combine(main.Store.Root, bullet.AppFolder));
+        var folder = Path.Combine(main.Store.Root, bullet.AppFolder);
+        if (!Directory.Exists(folder))
+        {
+            main.ShowToast("That application was removed. The bullet is still here to copy.");
+            return;
+        }
+
+        main.SelectByFolder(folder);
         main.SelectedTabIndex = 0;
     }
 }

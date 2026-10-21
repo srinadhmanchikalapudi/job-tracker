@@ -1,0 +1,95 @@
+<Window x:Class="JobTracker.App.DuplicateJdWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Possible duplicate" Icon="Assets/app.ico" Height="780" Width="1100" MinWidth="780" MinHeight="520"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Grid Margin="22,18,22,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <Image Source="{StaticResource LogoImage}" Width="34" Height="34" />
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock x:Name="Heading" FontSize="19" FontWeight="Bold" Text="This looks like a job description you already saved" />
+                <TextBlock x:Name="SubHeading" Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Which saved one to compare with, when there is more than one -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="PickLabel" Text="Compare with" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <ComboBox x:Name="MatchBox" Grid.Column="1" SelectionChanged="MatchBox_SelectionChanged" AutomationProperties.Name="Saved application to compare with" />
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Style="{StaticResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Margin="14,10,14,8">
+                        <TextBlock Text="Already saved" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SavedTitle" Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="14,0,14,12" AutomationProperties.Name="Saved job description">
+                        <TextBlock x:Name="SavedText" TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Margin="14,10,14,8">
+                        <TextBlock Text="What you just pasted" FontWeight="SemiBold" />
+                        <TextBlock x:Name="NewTitle" Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="14,0,14,12" AutomationProperties.Name="Pasted job description">
+                        <TextBlock x:Name="NewText" TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="14" Height="14" CornerRadius="3" Background="#4DF59E0B" VerticalAlignment="Center" />
+                    <TextBlock Text="Highlighted lines are only in that one. Everything else is in both." FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"
+                           Text="Nothing has been saved yet. Save it anyway if this is a different role, or go back and change what you pasted." />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource GhostButton}" Content="Open the saved one" Padding="14,8" Click="OpenSaved_Click" AutomationProperties.Name="Open the saved one"
+                        ToolTip="Leave this window without saving, and show the application that is already there" />
+                <Button Style="{StaticResource GhostButton}" Content="Save anyway" Padding="14,8" Margin="8,0,0,0" Click="SaveAnyway_Click" AutomationProperties.Name="Save anyway"
+                        ToolTip="It is a different role: keep both" />
+                <Button Style="{StaticResource PrimaryButton}" Content="Go back" Padding="22,8" Margin="8,0,0,0" IsDefault="True" IsCancel="True" Click="GoBack_Click"
+                        AutomationProperties.Name="Go back" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

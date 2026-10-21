@@ -23,6 +23,7 @@
             <Border Style="{StaticResource Card}" Padding="14,10">
                 <StackPanel>
                     <TextBlock x:Name="NoteText" TextWrapping="Wrap" />
+                    <TextBlock x:Name="NameText" TextWrapping="Wrap" Margin="0,6,0,0" AutomationProperties.Name="Upload-ready file name" />
                     <TextBox x:Name="PathBox" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" Margin="0,6,0,0" FontSize="12"
                              Opacity="0.7" TextWrapping="Wrap" AutomationProperties.Name="File location" />
                 </StackPanel>
@@ -55,6 +56,8 @@
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Style="{StaticResource GhostButton}" Content="Open file location" Padding="14,8" Click="OpenLocation_Click" AutomationProperties.Name="Open file location" />
+                <Button Style="{StaticResource GhostButton}" Content="Copy file" Padding="14,8" Margin="8,0,0,0" Click="CopyFile_Click" AutomationProperties.Name="Copy file"
+                        ToolTip="Puts the file on the clipboard, like Ctrl+C in File Explorer, so you can paste it into an email or an upload box" />
                 <Button Style="{StaticResource GhostButton}" Content="Open in Word" Padding="14,8" Margin="8,0,0,0" Click="OpenInWord_Click" AutomationProperties.Name="Open in Word" />
                 <Button Style="{StaticResource PrimaryButton}" Content="Download…" Padding="20,8" Margin="8,0,0,0" Click="Download_Click" AutomationProperties.Name="Download" />
                 <Button Style="{StaticResource GhostButton}" Content="Close" Padding="18,8" Margin="8,0,0,0" IsCancel="True" />

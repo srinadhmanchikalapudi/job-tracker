@@ -128,6 +128,9 @@ public sealed partial class ApplicationItemVM : ObservableObject
     }
 
     [RelayCommand]
+    private void Remove() => Main.RemoveApplication(this);
+
+    [RelayCommand]
     private void OpenFolder() =>
         Process.Start(new ProcessStartInfo("explorer.exe") { ArgumentList = { App.FolderPath } });
 

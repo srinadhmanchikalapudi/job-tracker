@@ -27,10 +27,14 @@ public partial class NewApplicationWindow : Window
     // The resume built from scratch (if there is one), offered as a one-click way to fill the resume box.
     private readonly Func<string?>? _builtResume;
 
-    public NewApplicationWindow(JobType initialJobType = JobType.FullTime, Func<string?>? builtResume = null)
+    // Looks for saved applications of the same company whose job description is nearly the same (company, job description -> matches).
+    private readonly Func<string, string, IReadOnlyList<SimilarJd>>? _findSimilar;
+
+    public NewApplicationWindow(JobType initialJobType = JobType.FullTime, Func<string?>? builtResume = null, Func<string, string, IReadOnlyList<SimilarJd>>? findSimilar = null)
     {
         InitializeComponent();
         _builtResume = builtResume;
+        _findSimilar = findSimilar;
         UseBuiltButton.Visibility = builtResume?.Invoke() is null ? Visibility.Collapsed : Visibility.Visible;
         DateBox.SelectedDate = DateTime.Today;
         JobTypeBox.ItemsSource = MainViewModel.JobTypeOptions;
@@ -40,6 +44,9 @@ public partial class NewApplicationWindow : Window
 
     /// <summary>Set when the user clicks Save.</summary>
     public NewApplication? Result { get; private set; }
+
+    /// <summary>Set when the person chose "Open the saved one" on the possible-duplicate window: nothing was saved, and this is the folder to show.</summary>
+    public string? OpenExistingFolder { get; private set; }
 
     private void JdBox_Pasting(object sender, DataObjectPastingEventArgs e)
     {
@@ -317,6 +324,21 @@ public partial class NewApplicationWindow : Window
     {
         var raw = JdBox.Text;
         var jd = CleanBox.IsChecked == true ? JdCleaner.Clean(raw).Text : raw;
+
+        // Same company, nearly the same description: ask before filing a second copy. Nothing is lost by going back; everything stays typed in.
+        if (_findSimilar?.Invoke(CompanyBox.Text.Trim(), jd) is { Count: > 0 } similar)
+        {
+            var ask = new DuplicateJdWindow(CompanyBox.Text.Trim(), RoleBox.Text.Trim(), jd, similar) { Owner = this };
+            ask.ShowDialog();
+            if (ask.Choice == DuplicateChoice.GoBack)
+                return;
+            if (ask.Choice == DuplicateChoice.OpenSaved)
+            {
+                OpenExistingFolder = ask.Selected.FolderPath;
+                DialogResult = false;
+                return;
+            }
+        }
 
         Result = new NewApplication(
             CompanyBox.Text.Trim(),

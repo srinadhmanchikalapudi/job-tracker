@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using JobTracker.Core.Export;
 using JobTracker.Core.Tailoring;
 
 namespace JobTracker.App.ViewModels;
@@ -41,8 +42,15 @@ public sealed partial class TermVM(TermMatch match, MatchVM owner) : ObservableO
     private void Hide() => owner.Dismiss(Skill);
 }
 
-public sealed partial class VersionVM(ResumeVersion version, MatchVM owner) : ObservableObject
+public sealed partial class VersionVM(ResumeVersion version, MatchVM owner, string score = "") : ObservableObject
 {
+    /// <summary>What the match would be if this version were the resume, counted from its text. Empty when it cannot be read.</summary>
+    public string Score { get; } = score;
+
+    /// <summary>True when this version is the resume in use right now.</summary>
+    public bool IsCurrent => Score == "This is your resume now.";
+    public bool HasScore => Score.Length > 0;
+
     public ResumeVersion Version { get; } = version;
     public string Name => $"Version {Version.Number}";
     public string Detail => $"{Version.FileName} · saved {Version.SavedAt:yyyy-MM-dd HH:mm}";
@@ -74,6 +82,11 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
     [ObservableProperty] private bool _hasTerms;
     [ObservableProperty] private int _hiddenCount;
     [ObservableProperty] private bool _hasVersions;
+
+    /// <summary>The resume in use, shown at the top of the versions: what it is, how it scores, and the name its Word file will have.</summary>
+    [ObservableProperty] private string _currentDetail = "";
+    [ObservableProperty] private string _currentFileName = "";
+    [ObservableProperty] private bool _hasCurrent;
 
     public ApplicationItemVM Owner => owner;
     public MatchReport Report => _report;
@@ -115,9 +128,16 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
 
             Detail = BuildDetail();
             Versions.Clear();
+            var jd = JdAnalyzer.Analyze(main.Store.ReadJd(owner.App));
+            var current = main.Store.ReadResume(owner.App);
             foreach (var v in ResumeVersions.List(owner.App.FolderPath).OrderByDescending(v => v.Number))
-                Versions.Add(new VersionVM(v, this));
+                Versions.Add(new VersionVM(v, this, ScoreOf(v, jd, current)));
             HasVersions = Versions.Count > 0;
+            HasCurrent = current.Trim().Length > 0;
+            CurrentFileName = HasCurrent ? DownloadNames.Suggest(current) : "";
+            var same = Versions.FirstOrDefault(v => v.IsCurrent);
+            var scoreText = _report.CoreTotal > 0 ? $" {Percent}% ({_report.CoreInResume} of {_report.CoreTotal} key skills)." : "";
+            CurrentDetail = !HasCurrent ? "" : (same is not null ? $"Same as {same.Name}." : "The resume you pasted or attached.") + scoreText;
         });
 
         OnPropertyChanged(nameof(HasMissing));
@@ -125,6 +145,27 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
         OnPropertyChanged(nameof(HasCovered));
         OnPropertyChanged(nameof(HasHidden));
         OnPropertyChanged(nameof(NoTerms));
+    }
+
+    /// <summary>The score a saved version would give, so a better one can be seen before it is chosen. The resume itself only changes with "Use as my resume".</summary>
+    private string ScoreOf(ResumeVersion version, JobTracker.Core.Tailoring.JdAnalysis jd, string currentResume)
+    {
+        try
+        {
+            var text = ResumeVersions.Read(version);
+            if (text.Trim() == currentResume.Trim())
+                return "This is your resume now.";
+            var report = ResumeMatcher.Match(jd, text, _state);
+            if (report.CoreTotal == 0)
+                return "";
+            var delta = report.CoreCoveragePercent - _report.CoreCoveragePercent;
+            var change = delta == 0 ? "same as your resume now" : delta > 0 ? $"up from {_report.CoreCoveragePercent}% now" : $"down from {_report.CoreCoveragePercent}% now";
+            return $"If you use it: {report.CoreCoveragePercent}% ({report.CoreInResume} of {report.CoreTotal} key skills), {change}.";
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+        {
+            return "";
+        }
     }
 
     private string BuildDetail()
@@ -180,9 +221,7 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
         var main = owner.Main;
         var folder = owner.App.FolderPath;
         var text = version is null ? main.Store.ReadResume(owner.App) : ResumeVersions.Read(version);
-        return WordPreviews.Make(main, folder, owner.Company, text,
-            version is null ? "resume.docx" : $"resume.v{version.Number}.docx",
-            version is null ? "Your resume as it is now" : $"Version {version.Number} of your resume");
+        return WordPreviews.Make(main, folder, text, version is null ? "Your resume as it is now" : $"Version {version.Number} of your resume");
     }
 
     public void UseAsResume(ResumeVersion version)

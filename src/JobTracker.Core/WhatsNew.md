@@ -3,6 +3,15 @@
 One section per version, newest first. Written for the people who use the app: they are shown inside the program (Settings, the update bar,
 and once after each update) and become the notes on the GitHub release. `tools/publish.ps1` refuses to build a version that has no section here.
 
+## 1.4.1
+
+- **A warning when you paste the same job twice.** A company can have many roles, so a new job at the same company saves as usual. But if the job description is 70% or more the same as one you already saved for that company, you are asked first. A window shows both descriptions side by side with the lines that are only in one of them highlighted. Go back (nothing you typed is lost), save it anyway if it is a different role, or open the one you already have.
+- **Remove an application you added by mistake.** The new **Remove** button asks first, then moves the application's folder to the Windows Recycle Bin, so you can get it back from there. Bullets you starred from it stay in Starred bullets.
+- **A Word file ready to upload or attach.** The file is now named like `Priya_Raman_Resume.docx` (first and last name, no spaces, no company name) and is saved in the application's folder, so you can select it and press Ctrl+C. A new **Copy file** button does the same from the preview window.
+- **Your resume now, at the top of the saved versions.** The Match tab shows the resume in use first, with its score and Word file name. Every saved version shows the score it would give, so you can see an improvement before you choose it.
+- **Add new bullets is now the first tab of Improve bullets**, and it lists the keywords from the job description that are not in your resume yet. Tick the ones you really used, or just type a skill such as Kubernetes: the bullet ties it to work that job already describes and adds nothing else, and the window reminds you to check it is true before you add it.
+- **Improve bullets no longer fails with "could not read".** If the AI answers in words instead of bullets, you now see what it said. A bar at the bottom of the window shows how long it has been waiting and has a **Stop** button.
+- The buttons under an application's title no longer touch when the window is narrow, and neither does the search bar.
 ## 1.4.0
 
 - **Tailor your resume to a job.** Every application has a new **Match** tab. It lists the skills the job description asks for and shows which your resume already says, with a percentage counted from the two texts. For a skill you have really used but never wrote down, click **I've used it** and say where.

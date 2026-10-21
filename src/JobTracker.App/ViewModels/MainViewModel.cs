@@ -163,6 +163,47 @@ public sealed partial class MainViewModel : ObservableObject
         ShowToast($"Now using {path}");
     }
 
+    /// <summary>Saved applications of the same company whose job description is nearly the same as <paramref name="jd"/>, closest first.</summary>
+    public IReadOnlyList<SimilarJd> FindSimilarJds(string company, string jd) =>
+        JdSimilarity.FindSimilar(_items.Select(i => i.App).ToList(), _store.ReadJd, company, jd);
+
+    /// <summary>
+    /// Asked before an application is removed: the application and how many starred bullets came from it. True removes it. The default says no, so
+    /// nothing is removed unless the window that owns this asks the person and gets a yes.
+    /// </summary>
+    public Func<ApplicationItemVM, int, bool> ConfirmRemove { get; set; } = (_, _) => false;
+
+    /// <summary>What happens to the folder: the Recycle Bin. Tests swap it for something that does not touch the real Recycle Bin.</summary>
+    public Action<string> DisposeFolder { get; set; } = RecycleBin.Send;
+
+    /// <summary>
+    /// Removes an application the person added by mistake or no longer wants. Its folder goes to the Recycle Bin, so it can be put back from there;
+    /// bullets starred from it stay in the starred library. Does nothing unless <see cref="ConfirmRemove"/> says yes.
+    /// </summary>
+    public void RemoveApplication(ApplicationItemVM item)
+    {
+        var folder = _store.RelativeFolder(item.App);
+        var starred = _bulletLibrary.List().Count(b => string.Equals(b.AppFolder, folder, StringComparison.OrdinalIgnoreCase));
+        if (!ConfirmRemove(item, starred))
+            return;
+
+        var position = Applications.IndexOf(item);
+        var removed = false;
+        Try(() =>
+        {
+            _store.Remove(item.App, DisposeFolder);
+            removed = true;
+        });
+        if (!removed)
+            return; // the folder is still there; Try has said why
+
+        Selected = null;
+        Reload();
+        if (Applications.Count > 0)
+            Selected = Applications[Math.Clamp(position, 0, Applications.Count - 1)]; // the one that took its place
+        ShowToast($"Removed {item.Company}, {item.Role}. It is in the Recycle Bin if you need it back");
+    }
+
     public void AddApplication(NewApplication input)
     {
         Try(() =>

@@ -69,6 +69,99 @@
             <!-- Three ways to work -->
             <TabControl Grid.Column="2" Margin="0">
 
+                <!-- ============================================================ new bullets -->
+                <TabItem Header="Add new bullets" Padding="14,6" AutomationProperties.Name="Add new bullets">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,14,10,12">
+                            <TextBlock Style="{StaticResource SubtleText}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="Add bullets to a job. Tell me what you did there and they are written from your words. Or just type a skill (like Kubernetes) or tick a keyword below, and I will tie it to work this job already describes. Leave everything blank and they can only restate what the job's bullets already say, in a different way." />
+
+                            <TextBlock Text="Add them to" FontWeight="SemiBold" Margin="0,0,0,4" />
+                            <ComboBox ItemsSource="{Binding Jobs}" SelectedItem="{Binding SelectedJob}" DisplayMemberPath="Label" AutomationProperties.Name="Job for new bullets" />
+
+                            <StackPanel Margin="0,14,0,0" Visibility="{Binding HasJob, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Which skills should they speak to? (optional)" FontWeight="SemiBold" />
+                                <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,8"
+                                           Text="A skill you said you have used brings your note along, so a bullet can finally say it." />
+                                <ItemsControl ItemsSource="{Binding NewSkills}">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <ToggleButton Style="{StaticResource GhostToggle}" Content="{Binding Skill}" IsChecked="{Binding IsPicked}" Padding="12,4"
+                                                          Margin="0,0,8,8" ToolTip="{Binding Tooltip}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <StackPanel Margin="0,4,0,0" Visibility="{Binding HasNewMissing, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="Not in your resume: keywords from the job description" FontWeight="SemiBold" />
+                                    <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,8"
+                                               Text="Tick only the ones you really used in this job. A bullet will then tie each one to work this job already describes, and you check it is true before you add it." />
+                                    <ItemsControl ItemsSource="{Binding NewMissingSkills}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <ToggleButton Style="{StaticResource MissingSkillToggle}" IsChecked="{Binding IsPicked}" Padding="12,4" Margin="0,0,8,8" ToolTip="{Binding Tooltip}"
+                                                              AutomationProperties.Name="{Binding Skill, StringFormat=Keyword {0}}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Skill}" />
+                                                        <TextBlock Text="{Binding Tag}" Opacity="0.65" FontSize="11" Margin="6,2,0,0" VerticalAlignment="Center"
+                                                                   Visibility="{Binding HasTag, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
+                                                </ToggleButton>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <TextBlock Text="What did you do in this job? (optional)" FontWeight="SemiBold" Margin="0,8,0,4" />
+                                <TextBox Text="{Binding Answers, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="96" Padding="8,6"
+                                         VerticalScrollBarVisibility="Auto" AutomationProperties.Name="What you did" />
+                                <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"
+                                           Text="For example: what you built or ran, with which tools, how many people or systems it served, and what got better because of it. Only what is true. Or type just a skill, like Kubernetes: I will tie it to the work this job already describes." />
+                                <TextBlock Text="{Binding AnswersHint}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0" />
+
+                                <Button Style="{StaticResource PrimaryButton}" Command="{Binding GenerateNewCommand}" IsEnabled="{Binding CanGenerateNew}"
+                                        Content="Write new bullets" HorizontalAlignment="Left" Margin="0,14,0,0" AutomationProperties.Name="Write new bullets" />
+
+                                <TextBlock Text="{Binding NewStatus}" TextWrapping="Wrap" Margin="0,12,0,0" AutomationProperties.Name="New bullets status" />
+
+                                <Border Margin="0,8,0,0" CornerRadius="8" Padding="10,8" BorderThickness="1" Background="#26F59E0B" BorderBrush="#80F59E0B"
+                                        Visibility="{Binding HasNewNote, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding NewNote}" TextWrapping="Wrap" />
+                                </Border>
+
+                                <ItemsControl ItemsSource="{Binding NewOptions}" Margin="0,10,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource Card}" Padding="16,12" Margin="0,0,0,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding Note}" Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
+                                                                   Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="Add to this job" Command="{Binding AddCommand}" Padding="14,6"
+                                                            Margin="14,0,0,0" VerticalAlignment="Top" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Expander Header="Why some suggestions were dropped" Margin="0,4,0,0"
+                                          Visibility="{Binding HasNewRejected, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding NewRejectedSummary}" TextWrapping="Wrap" Style="{StaticResource SubtleText}" Margin="0,6,0,0" />
+                                </Expander>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
                 <!-- ============================================================ one bullet -->
                 <TabItem Header="One bullet" Padding="14,6" AutomationProperties.Name="One bullet">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -214,77 +307,6 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <!-- ============================================================ new bullets -->
-                <TabItem Header="Add new bullets" Padding="14,6" AutomationProperties.Name="Add new bullets">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="0,14,10,12">
-                            <TextBlock Style="{StaticResource SubtleText}" TextWrapping="Wrap" Margin="0,0,0,10"
-                                       Text="Add bullets to a job. Tell me what you did there and they are written from your words. Leave it blank and they can only restate what the job's bullets already say, in a different way." />
-
-                            <TextBlock Text="Add them to" FontWeight="SemiBold" Margin="0,0,0,4" />
-                            <ComboBox ItemsSource="{Binding Jobs}" SelectedItem="{Binding SelectedJob}" DisplayMemberPath="Label" AutomationProperties.Name="Job for new bullets" />
-
-                            <StackPanel Margin="0,14,0,0" Visibility="{Binding HasJob, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="Which skills should they speak to? (optional)" FontWeight="SemiBold" />
-                                <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,8"
-                                           Text="A skill you said you have used brings your note along, so a bullet can finally say it." />
-                                <ItemsControl ItemsSource="{Binding NewSkills}">
-                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <ToggleButton Style="{StaticResource GhostToggle}" Content="{Binding Skill}" IsChecked="{Binding IsPicked}" Padding="12,4"
-                                                          Margin="0,0,8,8" ToolTip="{Binding Tooltip}" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-
-                                <TextBlock Text="What did you do in this job? (optional)" FontWeight="SemiBold" Margin="0,8,0,4" />
-                                <TextBox Text="{Binding Answers, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="96" Padding="8,6"
-                                         VerticalScrollBarVisibility="Auto" AutomationProperties.Name="What you did" />
-                                <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"
-                                           Text="For example: what you built or ran, with which tools, how many people or systems it served, and what got better because of it. Only what is true." />
-                                <TextBlock Text="{Binding AnswersHint}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0" />
-
-                                <Button Style="{StaticResource PrimaryButton}" Command="{Binding GenerateNewCommand}" IsEnabled="{Binding CanGenerateNew}"
-                                        Content="Write new bullets" HorizontalAlignment="Left" Margin="0,14,0,0" AutomationProperties.Name="Write new bullets" />
-
-                                <TextBlock Text="{Binding NewStatus}" TextWrapping="Wrap" Margin="0,12,0,0" AutomationProperties.Name="New bullets status" />
-
-                                <Border Margin="0,8,0,0" CornerRadius="8" Padding="10,8" BorderThickness="1" Background="#26F59E0B" BorderBrush="#80F59E0B"
-                                        Visibility="{Binding HasNewNote, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{Binding NewNote}" TextWrapping="Wrap" />
-                                </Border>
-
-                                <ItemsControl ItemsSource="{Binding NewOptions}" Margin="0,10,0,0">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Style="{StaticResource Card}" Padding="16,12" Margin="0,0,0,10">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <StackPanel>
-                                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
-                                                        <TextBlock Text="{Binding Note}" Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
-                                                                   Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
-                                                    </StackPanel>
-                                                    <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="Add to this job" Command="{Binding AddCommand}" Padding="14,6"
-                                                            Margin="14,0,0,0" VerticalAlignment="Top" />
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-
-                                <Expander Header="Why some suggestions were dropped" Margin="0,4,0,0"
-                                          Visibility="{Binding HasNewRejected, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{Binding NewRejectedSummary}" TextWrapping="Wrap" Style="{StaticResource SubtleText}" Margin="0,6,0,0" />
-                                </Expander>
-                            </StackPanel>
-                        </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
             </TabControl>
         </Grid>
 
@@ -294,6 +316,15 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel VerticalAlignment="Center">
+                <!-- Always visible, whichever tab is open: the model is being asked, for how long, and a way to stop -->
+                <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,0,0,8" AutomationProperties.Name="Working">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding BusyText}" FontWeight="SemiBold" VerticalAlignment="Center" AutomationProperties.Name="Progress" />
+                        <Button Content="Stop" Style="{StaticResource GhostButton}" Padding="12,3" Margin="12,0,0,0" Command="{Binding StopCommand}"
+                                AutomationProperties.Name="Stop" ToolTip="Stop waiting for the AI. Nothing is added." />
+                    </StackPanel>
+                    <ProgressBar IsIndeterminate="True" Height="4" Margin="0,6,0,0" HorizontalAlignment="Left" Width="360" />
+                </StackPanel>
                 <TextBlock Text="{Binding ChangesText}" FontWeight="SemiBold" AutomationProperties.Name="Changes" />
                 <TextBlock Style="{StaticResource SubtleText}" FontSize="12" Text="Saving makes a new version next to your resume. Your resume itself is not touched." />
             </StackPanel>
