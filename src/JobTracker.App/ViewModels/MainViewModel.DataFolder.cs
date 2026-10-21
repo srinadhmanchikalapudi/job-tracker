@@ -22,6 +22,25 @@ public sealed partial class MainViewModel
     /// <summary>How many applications are saved in the folder in use now.</summary>
     public int ApplicationCount => _items.Count;
 
+    /// <summary>True when there is a resume built from scratch in the folder in use, which a change of folder can carry over.</summary>
+    public bool HasBuiltResume => JobTracker.Core.Builder.ResumeBuilderFiles.Exists(DataRoot);
+
+    /// <summary>The resume built from scratch, as resume text, or null when there is none (or it is empty).</summary>
+    public string? BuiltResumeText
+    {
+        get
+        {
+            var store = new JobTracker.Core.Builder.ProfileStore(DataRoot);
+            if (!store.Exists)
+                return null;
+            var text = JobTracker.Core.Builder.ResumeProfileText.Build(store.Load());
+            return text.Trim().Length == 0 ? null : text;
+        }
+    }
+
+    /// <summary>Applications or a built resume: either is worth asking about before changing folder.</summary>
+    public bool HasMovableData => ApplicationCount > 0 || HasBuiltResume;
+
     public bool CanChangeFolder => !IsMovingFiles;
 
     partial void OnIsMovingFilesChanged(bool value) => OnPropertyChanged(nameof(CanMoveToOneDrive));
@@ -84,7 +103,9 @@ public sealed partial class MainViewModel
 
             await _dispatcher.InvokeAsync(RefreshBackupStatus).Task;
             var count = result.Applications.Count;
-            var summary = count == 1 ? "Moved 1 application" : $"Moved {count} applications";
+            var summary = count == 0 && result.BuilderCopied ? "Moved your resume"
+                : count == 1 ? "Moved 1 application" + (result.BuilderCopied ? " and your resume" : "")
+                : $"Moved {count} applications" + (result.BuilderCopied ? " and your resume" : "");
             return warnings.Count == 0
                 ? new FolderChangeResult(true, $"{summary} to {newRoot}.")
                 : new FolderChangeResult(true,

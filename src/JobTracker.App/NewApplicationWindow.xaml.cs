@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using JobTracker.App.ViewModels;
 using JobTracker.Core;
+using JobTracker.Core.Resumes;
+using Microsoft.Win32;
 
 namespace JobTracker.App;
 
@@ -18,9 +20,18 @@ public partial class NewApplicationWindow : Window
     private bool _jobTypeChosenByUser;
     private bool _settingJobType;
 
-    public NewApplicationWindow(JobType initialJobType = JobType.FullTime)
+    // The resume file the person attached (its text was read into the box). A copy is kept with the application.
+    private string? _attachedResumePath;
+    private bool _readingResume;
+
+    // The resume built from scratch (if there is one), offered as a one-click way to fill the resume box.
+    private readonly Func<string?>? _builtResume;
+
+    public NewApplicationWindow(JobType initialJobType = JobType.FullTime, Func<string?>? builtResume = null)
     {
         InitializeComponent();
+        _builtResume = builtResume;
+        UseBuiltButton.Visibility = builtResume?.Invoke() is null ? Visibility.Collapsed : Visibility.Visible;
         DateBox.SelectedDate = DateTime.Today;
         JobTypeBox.ItemsSource = MainViewModel.JobTypeOptions;
         SetJobType(initialJobType);
@@ -54,7 +65,185 @@ public partial class NewApplicationWindow : Window
         if (filled.Count > 0)
             AutoFillNote.Text = $"Filled {string.Join(", ", filled)} from the job description. Please check.";
 
+        // Read from what was pasted, not the cleaned copy: a "Pay" box on a job page is the sort of thing clean-up can drop.
+        var pay = JobTracker.Core.Pay.PayExtractor.Extract(JdBox.Text);
+        PayNote.Text = JdBox.Text.Trim().Length == 0 ? "" : pay is null ? "Pay: not stated in this posting." : $"Pay found: {pay.Display}";
+
         RefreshCleanup();
+    }
+
+    // ---------------------------------------------------------------- the resume: paste it, or attach a file
+
+    private void ResumeBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (ResumeHint is not null && ResumeBox is not null)
+            ResumeHint.Visibility = ResumeBox.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void AttachResume_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog { Title = "Attach your resume", Filter = ResumeFileReader.DialogFilter, CheckFileExists = true };
+        if (dialog.ShowDialog(this) == true)
+            await AttachResumeAsync(dialog.FileName);
+    }
+
+    private static bool HasResumeFile(DragEventArgs e) =>
+        e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 };
+
+    private void Resume_DragOver(object sender, DragEventArgs e)
+    {
+        // Only files are handled here; text dragged into the box keeps its normal behaviour.
+        if (!HasResumeFile(e))
+            return;
+        e.Effects = DragDropEffects.Copy;
+        DropOverlay.Visibility = Visibility.Visible;
+        e.Handled = true;
+    }
+
+    private void Resume_DragLeave(object sender, DragEventArgs e) => DropOverlay.Visibility = Visibility.Collapsed;
+
+    private async void Resume_Drop(object sender, DragEventArgs e)
+    {
+        DropOverlay.Visibility = Visibility.Collapsed;
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files)
+            return;
+
+        e.Handled = true;
+        await AttachResumeAsync(files.FirstOrDefault(ResumeFileReader.IsSupported) ?? files[0]);
+    }
+
+    /// <summary>Puts the resume built in "My resume" in the box (asking first if the box already has different text).</summary>
+    public bool UseBuiltResume(Func<string, bool>? confirmReplace = null)
+    {
+        if (_builtResume?.Invoke() is not { } text)
+            return false;
+
+        var existing = ResumeBox.Text.Trim();
+        if (existing.Length > 0 && existing != text.Trim())
+        {
+            var replace = confirmReplace?.Invoke(existing) ??
+                          MessageBox.Show(this, "The resume box already has text. Replace it with the resume you built?", "Use my resume",
+                              MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
+            if (!replace)
+                return false;
+        }
+
+        // The text no longer comes from an attached file, so the file is not kept as this application's original.
+        _attachedResumePath = null;
+        AttachmentChip.Visibility = Visibility.Collapsed;
+        ShowResumeWarning(null);
+        ResumeBox.Text = text.TrimEnd();
+        return true;
+    }
+
+    private void UseBuilt_Click(object sender, RoutedEventArgs e) => UseBuiltResume();
+
+    private void RemoveAttachment_Click(object sender, RoutedEventArgs e)
+    {
+        _attachedResumePath = null;
+        AttachmentChip.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Reads a resume file and puts its text in the box for the person to check. If the box already holds different text, asks before replacing it.
+    /// The file itself is kept with the application when it is saved. Anything the person should look at (two columns, no text layer) is shown.
+    /// </summary>
+    /// <param name="askToReplace">Decides what to do when the box already has text: true to replace it, false to keep it (and still attach the file), null to cancel.</param>
+    public async Task AttachResumeAsync(string path, Func<string, bool?>? askToReplace = null)
+    {
+        if (_readingResume)
+            return;
+
+        _readingResume = true;
+        AttachButton.IsEnabled = false;
+        ShowResumeWarning(null);
+
+        // Read off the UI thread (a big PDF should not freeze the window), then come back to it explicitly rather than relying on an ambient context.
+        (ResumeExtraction? Result, string? Error) read;
+        try
+        {
+            read = await Task.Run(() => TryRead(path)).ConfigureAwait(false);
+        }
+        catch
+        {
+            await Dispatcher.InvokeAsync(FinishReading);
+            throw;
+        }
+
+        await Dispatcher.InvokeAsync(() =>
+        {
+            try
+            {
+                ApplyResume(path, read.Result, read.Error, askToReplace);
+            }
+            finally
+            {
+                FinishReading();
+            }
+        });
+    }
+
+    private static (ResumeExtraction? Result, string? Error) TryRead(string path)
+    {
+        try
+        {
+            return (ResumeFileReader.Read(path), null);
+        }
+        catch (ResumeReadException ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
+    private void FinishReading()
+    {
+        _readingResume = false;
+        AttachButton.IsEnabled = true;
+    }
+
+    private void ApplyResume(string path, ResumeExtraction? result, string? error, Func<string, bool?>? askToReplace)
+    {
+        if (result is null)
+        {
+            ShowResumeWarning(error);
+            return;
+        }
+
+        var name = System.IO.Path.GetFileName(path);
+        if (result.Text.Length > 0)
+        {
+            var existing = ResumeBox.Text.Trim();
+            if (existing.Length > 0 && existing != result.Text.Trim())
+            {
+                var replace = askToReplace is not null ? askToReplace(name) : AskToReplace(name);
+                if (replace is null)
+                    return; // cancelled: nothing changes
+                if (replace == true)
+                    ResumeBox.Text = result.Text;
+            }
+            else
+            {
+                ResumeBox.Text = result.Text;
+            }
+        }
+
+        _attachedResumePath = path;
+        AttachmentText.Text = $"Attached: {name} ({result.FileKind})";
+        AttachmentChip.Visibility = Visibility.Visible;
+        ShowResumeWarning(result.Warnings.Count == 0 ? null : string.Join("\n", result.Warnings));
+    }
+    private bool? AskToReplace(string fileName)
+    {
+        var answer = MessageBox.Show(this,
+            $"The resume box already has text.\n\nReplace it with the text from {fileName}?\n\nYes replaces it. No keeps your text and still attaches the file. Cancel attaches nothing.",
+            "Attach resume", MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Yes);
+        return answer switch { MessageBoxResult.Yes => true, MessageBoxResult.No => false, _ => null };
+    }
+
+    private void ShowResumeWarning(string? message)
+    {
+        ResumeWarningText.Text = message ?? "";
+        ResumeWarningBox.Visibility = string.IsNullOrEmpty(message) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private JobType SelectedJobType => JobTypeBox.SelectedValue is JobType type ? type : JobType.FullTime;
@@ -137,7 +326,8 @@ public partial class NewApplicationWindow : Window
             UrlBox.Text,
             DateOnly.FromDateTime(DateBox.SelectedDate ?? DateTime.Today),
             OriginalJd: jd == raw ? null : raw,
-            JobType: SelectedJobType);
+            JobType: SelectedJobType,
+            ResumeFilePath: _attachedResumePath);
         DialogResult = true;
     }
 }

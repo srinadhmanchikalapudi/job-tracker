@@ -149,6 +149,7 @@ public sealed partial class MainViewModel : ObservableObject
             _items = _store.List().Select(a => new ApplicationItemVM(a, this)).ToList();
             ApplyFilters();
             RefreshBullets();
+            LoadListPay(_items);
         });
     }
 

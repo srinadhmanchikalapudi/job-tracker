@@ -1,0 +1,64 @@
+<Window x:Class="JobTracker.App.ResumePreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Word document" Icon="Assets/app.ico" Height="860" Width="1000" MinWidth="760" MinHeight="560"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Grid Margin="22,18,22,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+            <Image Source="{StaticResource LogoImage}" Width="34" Height="34" />
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock x:Name="HeadingText" FontSize="19" FontWeight="Bold" />
+                <TextBlock Style="{StaticResource SubtleText}" FontSize="12" Text="A Word document (.docx). This preview shows what is in the file; Word may lay it out a little differently." />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <Border Style="{StaticResource Card}" Padding="14,10">
+                <StackPanel>
+                    <TextBlock x:Name="NoteText" TextWrapping="Wrap" />
+                    <TextBox x:Name="PathBox" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" Margin="0,6,0,0" FontSize="12"
+                             Opacity="0.7" TextWrapping="Wrap" AutomationProperties.Name="File location" />
+                </StackPanel>
+            </Border>
+            <Border x:Name="WarningBox" Visibility="Collapsed" Margin="0,8,0,0" CornerRadius="8" Padding="12,10" BorderThickness="1"
+                    Background="#26F59E0B" BorderBrush="#80F59E0B">
+                <TextBlock x:Name="WarningText" TextWrapping="Wrap" />
+            </Border>
+        </StackPanel>
+
+        <!-- The page -->
+        <Border Grid.Row="2" Background="#33808080" CornerRadius="10" Padding="0">
+            <FlowDocumentScrollViewer x:Name="Viewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" IsToolBarVisible="False"
+                                      Zoom="100" Margin="16,16,16,16" HorizontalAlignment="Center" Width="850" AutomationProperties.Name="Word document preview">
+                <FlowDocumentScrollViewer.Effect>
+                    <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.3" />
+                </FlowDocumentScrollViewer.Effect>
+            </FlowDocumentScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="3" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="StatusText" TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="360" AutomationProperties.Name="Status" />
+                <Button x:Name="ShowCopyButton" Style="{StaticResource GhostButton}" Content="Show it" Padding="10,4" Margin="10,0,0,0" Visibility="Collapsed"
+                        Click="ShowCopy_Click" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Style="{StaticResource GhostButton}" Content="Open file location" Padding="14,8" Click="OpenLocation_Click" AutomationProperties.Name="Open file location" />
+                <Button Style="{StaticResource GhostButton}" Content="Open in Word" Padding="14,8" Margin="8,0,0,0" Click="OpenInWord_Click" AutomationProperties.Name="Open in Word" />
+                <Button Style="{StaticResource PrimaryButton}" Content="Download…" Padding="20,8" Margin="8,0,0,0" Click="Download_Click" AutomationProperties.Name="Download" />
+                <Button Style="{StaticResource GhostButton}" Content="Close" Padding="18,8" Margin="8,0,0,0" IsCancel="True" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

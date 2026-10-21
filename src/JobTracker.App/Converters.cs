@@ -4,6 +4,16 @@ using System.Windows.Media;
 
 namespace JobTracker.App;
 
+/// <summary>The opposite of BooleanToVisibilityConverter: visible when the value is false.</summary>
+public sealed class BoolToInverseVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 /// <summary>First letter of a company name, for the avatar tile.</summary>
 public sealed class InitialConverter : IValueConverter
 {

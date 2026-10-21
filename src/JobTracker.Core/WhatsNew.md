@@ -3,6 +3,17 @@
 One section per version, newest first. Written for the people who use the app: they are shown inside the program (Settings, the update bar,
 and once after each update) and become the notes on the GitHub release. `tools/publish.ps1` refuses to build a version that has no section here.
 
+## 1.4.0
+
+- **Tailor your resume to a job.** Every application has a new **Match** tab. It lists the skills the job description asks for and shows which your resume already says, with a percentage counted from the two texts. For a skill you have really used but never wrote down, click **I've used it** and say where.
+- **Improve bullets.** Reword one bullet, reword all the bullets of a job together, or add new bullets to a job, in the job description's words, with a word-by-word before and after. Anything that adds a number, tool, role or name you did not write is thrown out before you see it, and the window says why. Your resume is never overwritten: changes are saved as a new version.
+- **A Word document of the result.** Preview the whole page, open its folder, open it in Word, or download it. If you attached a Word resume, the file is a copy of it with only your changes made in it, so your fonts and layout stay. Otherwise you get a clean one-column document that applicant tracking systems read reliably. Every file is read back and checked against your text.
+- **Build a resume from scratch.** The new **My resume** button walks you through contact details, a summary, your jobs, education and skills, saves as you type, and shows tips beside weak bullets. Bullets can be typed, put together from parts, or written by an AI helper from your own answers only. Use it in **New application** with one click.
+- **Pay from the job description.** The salary, range or hourly, daily or monthly rate a posting states is shown next to the date and in the list, for full-time and contract roles. If the posting states none, it says Not available. Revenue, funding and bonuses are never mistaken for pay.
+- **Attach your resume as a file** (PDF, Word, Markdown or text) when adding an application, or drop it on the resume box.
+- **AI help is optional and yours.** Add your own OpenRouter or Anthropic key in Settings (it is kept in Windows Credential Manager, not in a file) and pick a model from a list the service provides. You are asked before anything is sent, and only the bullet you picked, the job description and your notes go.
+- Changing where your applications are saved now carries your built resume along too.
+
 ## 1.3.1
 
 - Moving your applications (for example into OneDrive) now fully tidies up the old folders. OneDrive marks folders read-only, which used to leave empty folders behind.

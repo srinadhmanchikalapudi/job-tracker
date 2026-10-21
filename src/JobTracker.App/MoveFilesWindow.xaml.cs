@@ -7,14 +7,16 @@ public enum MoveChoice { Cancel, Move, Keep }
 /// <summary>Asks what to do with the applications already saved when the folder is changed.</summary>
 public partial class MoveFilesWindow : Window
 {
-    public MoveFilesWindow(string oldRoot, string newRoot, int count, bool newFolderHasApplications)
+    public MoveFilesWindow(string oldRoot, string newRoot, int count, bool newFolderHasApplications, bool hasBuiltResume = false)
     {
         InitializeComponent();
 
-        var noun = count == 1 ? "1 application" : $"{count} applications";
+        var noun = count == 0 ? "the resume you built" : count == 1 ? "1 application" : $"{count} applications";
+        if (count > 0 && hasBuiltResume)
+            noun += " and the resume you built";
         Summary.Text = $"You have {noun} saved in {oldRoot}.\n\nThe new folder is {newRoot}." +
                        (newFolderHasApplications ? " It already holds some applications; they are kept, and anything with the same name is added next to it, never overwritten." : "");
-        MoveButton.Content = count == 1 ? "Move 1 application" : $"Move {count} applications";
+        MoveButton.Content = count == 0 ? "Move my resume" : count == 1 ? "Move 1 application" : $"Move {count} applications";
         KeepText.Text = newFolderHasApplications
             ? "Switches to the new folder and its applications. The applications in the old folder stay where they are and will not appear in Job Tracker unless you switch back."
             : "Starts fresh in the new folder. The applications in the old folder stay where they are and will not appear in Job Tracker unless you switch back.";

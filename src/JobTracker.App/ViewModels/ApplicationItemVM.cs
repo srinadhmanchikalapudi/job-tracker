@@ -2,6 +2,7 @@ using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JobTracker.Core;
+using JobTracker.Core.Pay;
 
 namespace JobTracker.App.ViewModels;
 
@@ -16,12 +17,14 @@ public sealed partial class ApplicationItemVM : ObservableObject
         Main = main;
         Jd = new DocumentVM(this, BulletSource.Jd);
         Resume = new DocumentVM(this, BulletSource.Resume);
+        Match = new MatchVM(this);
     }
 
     public JobApplication App { get; }
     public MainViewModel Main { get; }
     public DocumentVM Jd { get; }
     public DocumentVM Resume { get; }
+    public MatchVM Match { get; }
 
     public string Company => App.Meta.Company;
     public string Role => App.Meta.Role;
@@ -75,6 +78,26 @@ public sealed partial class ApplicationItemVM : ObservableObject
 
     [ObservableProperty] private string _notes = "";
 
+    /// <summary>What the job description says it pays, or null when it says nothing.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PayText), nameof(HasPay), nameof(PayTooltip), nameof(PayShort))]
+    private PayInfo? _pay;
+
+    public bool HasPay => Pay is not null;
+
+    /// <summary>The short form shown in the list ("$60–$70/hr"), blank when the posting states no pay or it has not been read yet.</summary>
+    public string PayShort => Pay?.Short ?? "";
+    public string PayText => Pay?.Display ?? PayInfo.NotAvailable;
+
+    public string PayTooltip => Pay is null
+        ? "The job description does not state a salary or rate."
+        : $"From the job description: {Pay.Source}" +
+          (Pay.YearlyEquivalent is { } yearly ? $"\n{yearly}" : "") +
+          (Pay.OtherRanges > 0 ? $"\nThe posting lists {Pay.OtherRanges} other pay figure{(Pay.OtherRanges == 1 ? "" : "s")}; this is the first." : "");
+
+    /// <summary>Works out the pay again from the job description (after it is edited).</summary>
+    public void RefreshPay() => Main.Try(() => Pay = Main.Store.ReadPay(App));
+
     public void LoadDetail()
     {
         Main.Try(() =>
@@ -84,6 +107,8 @@ public sealed partial class ApplicationItemVM : ObservableObject
             _loadingNotes = true;
             Notes = Main.Store.ReadNotes(App);
             _loadingNotes = false;
+            Match.Refresh();
+            Pay = Main.Store.ReadPay(App);
         });
     }
 

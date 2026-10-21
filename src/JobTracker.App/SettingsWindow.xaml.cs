@@ -13,6 +13,7 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         viewModel.RefreshBackupStatus(); // OneDrive may have been started or stopped since the last time
+        Loaded += (_, _) => viewModel.LoadModelsOnOpen();
     }
 
     private MainViewModel Vm => (MainViewModel)DataContext;
@@ -34,6 +35,33 @@ public partial class SettingsWindow : Window
         if (Vm.BackupSuggestedFolder is { } folder)
             await ApplyFolderAsync(folder, offerSubfolder: false);
     }
+
+    // Choosing from the list should take effect straight away, not when the box next loses focus.
+    private void ModelBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (e.AddedItems.Count > 0 && sender is System.Windows.Controls.ComboBox box)
+        {
+            box.Text = (string)e.AddedItems[0]!;
+            System.Windows.Data.BindingOperations.GetBindingExpression(box, System.Windows.Controls.ComboBox.TextProperty)?.UpdateSource();
+        }
+    }
+
+    private void SaveKey_Click(object sender, RoutedEventArgs e)
+    {
+        if (KeyBox.Password.Trim().Length == 0)
+            return;
+        try
+        {
+            Vm.SaveAiKey(KeyBox.Password);
+            KeyBox.Clear();
+        }
+        catch (IOException ex)
+        {
+            MessageBox.Show(this, ex.Message, "Job Tracker", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void RemoveKey_Click(object sender, RoutedEventArgs e) => Vm.RemoveAiKey();
 
     private void WhatsNew_Click(object sender, RoutedEventArgs e) =>
         new WhatsNewWindow(Vm.BuildWhatsNew(), Vm.VersionText) { Owner = this }.ShowDialog();
@@ -65,9 +93,9 @@ public partial class SettingsWindow : Window
         }
 
         var move = false;
-        if (vm.ApplicationCount > 0)
+        if (vm.HasMovableData)
         {
-            var dialog = new MoveFilesWindow(vm.DataRoot, chosen, vm.ApplicationCount, DataRootAdvisor.LooksLikeDataFolder(chosen)) { Owner = this };
+            var dialog = new MoveFilesWindow(vm.DataRoot, chosen, vm.ApplicationCount, DataRootAdvisor.LooksLikeDataFolder(chosen), vm.HasBuiltResume) { Owner = this };
             dialog.ShowDialog();
             if (dialog.Choice == MoveChoice.Cancel)
                 return;

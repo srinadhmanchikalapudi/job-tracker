@@ -40,9 +40,15 @@ public partial class MainWindow : Window
 
     private void NewApplication_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new NewApplicationWindow(_vm.DefaultNewJobType) { Owner = this };
+        var dialog = new NewApplicationWindow(_vm.DefaultNewJobType, () => _vm.BuiltResumeText) { Owner = this };
         if (dialog.ShowDialog() == true && dialog.Result is { } input)
             _vm.AddApplication(input);
+    }
+
+    private void MyResume_Click(object sender, RoutedEventArgs e)
+    {
+        var window = new ResumeBuilderWindow(new ResumeBuilderVM(_vm)) { Owner = this };
+        window.ShowDialog();
     }
 
     private void WhatsNew_Click(object sender, RoutedEventArgs e) =>

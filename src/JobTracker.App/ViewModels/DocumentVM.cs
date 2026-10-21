@@ -104,6 +104,9 @@ public sealed partial class DocumentVM(ApplicationItemVM owner, BulletSource sou
             _text = EditText;
             IsEditing = false;
             Rebuild();
+            if (Source == BulletSource.Jd)
+                owner.RefreshPay();
+            owner.Match.Refresh(); // the skills found, and which are in the resume, depend on what was just saved
             owner.Main.ShowToast($"Saved {Title}");
         });
     }

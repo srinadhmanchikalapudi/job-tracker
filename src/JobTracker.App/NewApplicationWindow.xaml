@@ -81,9 +81,60 @@
                          VerticalScrollBarVisibility="Auto" />
             </Grid>
 
-            <TextBlock Grid.Column="2" Text="Resume" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,0,6" />
-            <TextBox Grid.Column="2" Grid.Row="1" x:Name="ResumeBox" AcceptsReturn="True" AcceptsTab="True"
-                     TextWrapping="Wrap" Padding="10" VerticalScrollBarVisibility="Auto" />
+            <!-- The resume: paste it, or attach a file (its text is read into the box so it can be checked). A file can also be dropped anywhere on this side. -->
+            <Grid Grid.Column="2" Grid.RowSpan="2" x:Name="ResumePanel" AllowDrop="True" Background="Transparent"
+                  PreviewDragEnter="Resume_DragOver" PreviewDragOver="Resume_DragOver" PreviewDragLeave="Resume_DragLeave" PreviewDrop="Resume_Drop">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <DockPanel Margin="0,0,0,6">
+                    <Button x:Name="UseBuiltButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="10,3" Margin="8,0,0,0" Click="UseBuilt_Click"
+                            AutomationProperties.Name="Use my resume" ToolTip="Fill the box with the resume you built in My resume">
+                        <TextBlock Text="Use my resume" />
+                    </Button>
+                    <Button x:Name="AttachButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="10,3" Click="AttachResume_Click"
+                            AutomationProperties.Name="Attach file"
+                            ToolTip="Attach a PDF, Word (.docx), Markdown or text file. Its text is read into the box so you can check it, and the file is kept with the application.">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE723;" Margin="0,0,8,0" />
+                            <TextBlock Text="Attach file…" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="Resume" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </DockPanel>
+
+                <Grid Grid.Row="1">
+                    <TextBox x:Name="ResumeBox" AcceptsReturn="True" AcceptsTab="True" TextWrapping="Wrap" Padding="10"
+                             VerticalScrollBarVisibility="Auto" TextChanged="ResumeBox_TextChanged" />
+                    <TextBlock x:Name="ResumeHint" IsHitTestVisible="False" TextWrapping="Wrap" Margin="14,12" VerticalAlignment="Top"
+                               Style="{StaticResource SubtleText}"
+                               Text="Paste your resume here, or drop a PDF or Word file on this side, or use Attach file." />
+                    <Border x:Name="DropOverlay" Visibility="Collapsed" IsHitTestVisible="False" CornerRadius="8" BorderThickness="2"
+                            Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource AccentBorder}">
+                        <TextBlock Text="Drop the resume file here" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" Foreground="{StaticResource AccentSolid}" />
+                    </Border>
+                </Grid>
+
+                <Border x:Name="AttachmentChip" Grid.Row="2" Visibility="Collapsed" Style="{StaticResource Card}" CornerRadius="8" Padding="10,6" Margin="0,8,0,0"
+                        ToolTip="A copy of this file is kept with the application, next to resume.md. The text in the box is what gets saved as resume.md.">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="Remove" Padding="10,2" Margin="10,0,0,0"
+                                Click="RemoveAttachment_Click" ToolTip="Detach the file. The text in the box stays." />
+                        <TextBlock Style="{StaticResource Icon}" DockPanel.Dock="Left" Text="&#xE723;" Margin="0,0,8,0" />
+                        <TextBlock x:Name="AttachmentText" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    </DockPanel>
+                </Border>
+
+                <Border x:Name="ResumeWarningBox" Grid.Row="3" Visibility="Collapsed" Margin="0,8,0,0" CornerRadius="8" Padding="10,8"
+                        BorderThickness="1" Background="#26F59E0B" BorderBrush="#80F59E0B">
+                    <TextBlock x:Name="ResumeWarningText" TextWrapping="Wrap" />
+                </Border>
+            </Grid>
         </Grid>
 
         <Grid Grid.Row="3" Margin="0,14,0,0">
@@ -96,6 +147,7 @@
                 <CheckBox x:Name="CleanBox" IsChecked="True" Checked="CleanBox_Changed" Unchecked="CleanBox_Changed"
                           Content="Remove page clutter (menus, buttons, footers) from the job description. The original is kept as jd.original.txt." />
                 <TextBlock x:Name="AutoFillNote" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{StaticResource AccentSolid}" />
+                <TextBlock x:Name="PayNote" FontWeight="SemiBold" Margin="0,2,0,0" />
                 <TextBlock x:Name="CleanupNote" Style="{StaticResource SubtleText}" Margin="0,2,0,0" />
                 <TextBlock x:Name="FolderNote" Style="{StaticResource SubtleText}" Margin="0,2,0,0" />
             </StackPanel>

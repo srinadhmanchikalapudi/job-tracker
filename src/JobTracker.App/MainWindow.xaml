@@ -25,14 +25,21 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource GhostButton}" Click="Settings_Click" Margin="0,0,10,0"
+                    <Button Style="{StaticResource GhostButton}" Click="MyResume_Click" Margin="0,0,10,0" AutomationProperties.Name="My resume"
+                            ToolTip="Build a resume from scratch, from your own answers">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{StaticResource ResumeIcon}" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="My resume" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource GhostButton}" Click="Settings_Click" Margin="0,0,10,0" AutomationProperties.Name="Settings"
                             ToolTip="{Binding DataRoot}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE713;" Margin="0,0,8,0" />
                             <TextBlock Text="Settings" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource PrimaryButton}" Click="NewApplication_Click" ToolTip="Ctrl+N">
+                    <Button Style="{StaticResource PrimaryButton}" Click="NewApplication_Click" ToolTip="Ctrl+N" AutomationProperties.Name="New application">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" Margin="0,0,8,0" />
                             <TextBlock Text="New application" />
@@ -167,8 +174,12 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <TextBlock Text="{Binding Role}" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding DateText}" Style="{StaticResource SubtleText}"
-                                                           FontSize="12" Margin="0,2,0,0" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="{Binding DateText}" Style="{StaticResource SubtleText}" FontSize="12" />
+                                                    <TextBlock Text="{Binding PayShort, StringFormat=· {0}}" Style="{StaticResource SubtleText}" FontSize="12" ToolTip="{Binding PayTooltip}"
+                                                               Margin="8,0,0,0" TextTrimming="CharacterEllipsis"
+                                                               Visibility="{Binding HasPay, Converter={StaticResource BoolToVis}}" />
+                                                </StackPanel>
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                                 <TextBlock Style="{StaticResource Icon}" Text="&#xE735;"
@@ -253,6 +264,24 @@
                                                     <TextBlock Text="{Binding DateText}" VerticalAlignment="Center" />
                                                 </StackPanel>
                                             </Border>
+                                            <Border Style="{StaticResource Card}" CornerRadius="8" Padding="11,6" Margin="0,0,10,0" ToolTip="{Binding PayTooltip}"
+                                                    AutomationProperties.Name="Pay">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Pay" Style="{StaticResource SubtleText}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding PayText}" FontWeight="SemiBold" VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasPay}" Value="False">
+                                                                        <Setter Property="FontWeight" Value="Normal" />
+                                                                        <Setter Property="Opacity" Value="0.6" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
                                             <ToggleButton Style="{StaticResource GhostToggle}" Margin="0,0,10,0"
                                                           IsChecked="{Binding IsStarred}"
                                                           ToolTip="Star the whole application so you can filter to it">
@@ -286,6 +315,9 @@
                                         </TabItem>
                                         <TabItem Header="Resume" Padding="12,5">
                                             <views:DocumentView DataContext="{Binding Resume}" />
+                                        </TabItem>
+                                        <TabItem Header="Match" Padding="12,5" AutomationProperties.Name="Match">
+                                            <views:MatchView DataContext="{Binding Match}" />
                                         </TabItem>
                                         <TabItem Header="Notes" Padding="12,5">
                                             <Grid Margin="0,12,0,0">

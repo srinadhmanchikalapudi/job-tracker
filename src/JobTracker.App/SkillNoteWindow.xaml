@@ -1,0 +1,25 @@
+<Window x:Class="JobTracker.App.SkillNoteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="I've used it" Icon="Assets/app.ico" Width="560" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" FocusManager.FocusedElement="{Binding ElementName=NoteBox}">
+    <StackPanel Margin="22,18,22,20">
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+            <Image Source="{StaticResource LogoImage}" Width="34" Height="34" />
+            <TextBlock x:Name="Heading" FontSize="19" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0,0,0" />
+        </StackPanel>
+
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
+                   Text="Where did you use it, and what did you do with it? One or two sentences, in your own words." />
+        <TextBox x:Name="NoteBox" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="84" Padding="8,6" VerticalScrollBarVisibility="Auto"
+                 AutomationProperties.Name="How you used it" />
+        <TextBlock Style="{StaticResource SubtleText}" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,16"
+                   Text="Rewrites can only describe it the way you write here. You can leave this empty, but then a rewrite can mention the skill without saying what you did with it. Nothing is sent anywhere until you ask for a rewrite." />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Style="{StaticResource GhostButton}" Content="Cancel" Padding="18,8" IsCancel="True" />
+            <Button x:Name="SaveButton" Style="{StaticResource PrimaryButton}" Content="Save" Margin="10,0,0,0" Padding="22,8" IsDefault="True"
+                    Click="Save_Click" />
+        </StackPanel>
+    </StackPanel>
+</Window>

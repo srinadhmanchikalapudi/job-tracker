@@ -42,4 +42,50 @@
             </DrawingGroup>
         </DrawingImage.Drawing>
     </DrawingImage>
+
+    <!-- "My resume": a page with a folded corner, a person and lines of text, in the logo's indigo-to-blue so it reads as a resume at button size. -->
+    <DrawingImage x:Key="ResumeIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- A transparent 24 x 24 frame, so the icon is always laid out at the same size -->
+                <GeometryDrawing Brush="Transparent">
+                    <GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,24,24" /></GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- The page -->
+                <GeometryDrawing Geometry="M7,2 H14 L20,8 V19 A3,3 0 0 1 17,22 H7 A3,3 0 0 1 4,19 V5 A3,3 0 0 1 7,2 Z">
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#6366F1" Offset="0" />
+                            <GradientStop Color="#2563EB" Offset="1" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- The folded corner -->
+                <GeometryDrawing Brush="#8CFFFFFF" Geometry="M14,2 L20,8 H16.5 A2.5,2.5 0 0 1 14,5.5 Z" />
+
+                <!-- The person -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <EllipseGeometry Center="9.4,11" RadiusX="1.9" RadiusY="1.9" />
+                            <PathGeometry Figures="M5.8,17 A3.6,3.6 0 0 1 13,17 Z" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Lines of text -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <RectangleGeometry Rect="14.2,10.2,3.8,1.4" RadiusX="0.7" RadiusY="0.7" />
+                            <RectangleGeometry Rect="14.2,13.4,3.8,1.4" RadiusX="0.7" RadiusY="0.7" />
+                            <RectangleGeometry Rect="6.5,18.8,11.5,1.4" RadiusX="0.7" RadiusY="0.7" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
 </ResourceDictionary>

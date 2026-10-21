@@ -11,6 +11,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <local:BoolToInverseVisibilityConverter x:Key="BoolToInverseVis" />
             <local:InitialConverter x:Key="Initial" />
             <local:CompanyBrushConverter x:Key="CompanyBrush" />
 
@@ -226,6 +227,27 @@
                 <Setter Property="TextElement.Foreground" Value="#A855F7" />
                 <Setter Property="TextElement.FontSize" Value="12" />
                 <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+            </Style>
+
+            <!-- Skill chips on the Match tab: amber when missing, purple when claimed but not written, green when already in the resume. -->
+            <Style x:Key="SkillChip" TargetType="Border">
+                <Setter Property="CornerRadius" Value="14" />
+                <Setter Property="Padding" Value="12,3,6,3" />
+                <Setter Property="Margin" Value="0,0,8,8" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Style>
+            <Style x:Key="SkillChipMissing" TargetType="Border" BasedOn="{StaticResource SkillChip}">
+                <Setter Property="Background" Value="#26F59E0B" />
+                <Setter Property="BorderBrush" Value="#66F59E0B" />
+            </Style>
+            <Style x:Key="SkillChipClaimed" TargetType="Border" BasedOn="{StaticResource SkillChip}">
+                <Setter Property="Background" Value="#26A855F7" />
+                <Setter Property="BorderBrush" Value="#66A855F7" />
+            </Style>
+            <Style x:Key="SkillChipCovered" TargetType="Border" BasedOn="{StaticResource SkillChip}">
+                <Setter Property="Padding" Value="12,5" />
+                <Setter Property="Background" Value="#2616A34A" />
+                <Setter Property="BorderBrush" Value="#6616A34A" />
             </Style>
 
             <!-- Application list rows as soft cards. -->
