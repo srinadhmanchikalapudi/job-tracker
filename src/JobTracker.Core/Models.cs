@@ -58,6 +58,7 @@ public sealed class JobApplication
 }
 
 /// <param name="OriginalJd">The JD exactly as pasted, when <paramref name="JdText"/> was cleaned. Saved as jd.original.txt.</param>
+/// <param name="ResumeFilePath">A resume file (PDF, Word, Markdown or text) the text came from. A copy is kept as resume.original.&lt;ext&gt;.</param>
 public sealed record NewApplication(
     string Company,
     string Role,
@@ -66,7 +67,8 @@ public sealed record NewApplication(
     string? Url = null,
     DateOnly? AppliedDate = null,
     string? OriginalJd = null,
-    JobType JobType = JobType.FullTime);
+    JobType JobType = JobType.FullTime,
+    string? ResumeFilePath = null);
 
 public sealed record SearchHit(JobApplication Application, BulletSource Source, int LineNumber, string Text);
 

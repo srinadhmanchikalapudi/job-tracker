@@ -1,3 +1,5 @@
+using JobTracker.Core.Builder;
+
 namespace JobTracker.Core;
 
 /// <summary>One application that was copied to the new folder.</summary>
@@ -5,7 +7,9 @@ namespace JobTracker.Core;
 /// <param name="NewRelative">Its path below the new folder (the same unless a folder with that name was already there).</param>
 public sealed record MovedApplication(string OldRelative, string NewRelative, string OldFullPath);
 
-public sealed record MoveResult(IReadOnlyList<MovedApplication> Applications, int FilesCopied, long BytesCopied, int BulletsCopied);
+/// <param name="BuilderCopied">The resume built from scratch (if there was one) was copied too.</param>
+/// <param name="BuilderSkipped">There was one, but the new folder already has its own, so the old one was left where it is.</param>
+public sealed record MoveResult(IReadOnlyList<MovedApplication> Applications, int FilesCopied, long BytesCopied, int BulletsCopied, bool BuilderCopied = false, bool BuilderSkipped = false);
 
 public sealed record MoveProgress(int Done, int Total, string Current);
 
@@ -88,6 +92,28 @@ public static class DataRootMover
                 moved.Add(new MovedApplication(relative, Path.GetRelativePath(newRoot, destination), app.FolderPath));
             }
 
+            // The resume built from scratch travels with the applications. A resume already in the new folder is never overwritten.
+            var builderCopied = false;
+            var builderSkipped = false;
+            var oldBuilder = ResumeBuilderFiles.Folder(oldRoot);
+            var newBuilder = ResumeBuilderFiles.Folder(newRoot);
+            if (Directory.Exists(oldBuilder))
+            {
+                if (Directory.Exists(newBuilder))
+                {
+                    builderSkipped = true;
+                }
+                else
+                {
+                    createdFolders.Add(newBuilder);
+                    var (builderFiles, builderBytes) = CopyDirectory(oldBuilder, newBuilder, ct);
+                    Verify(oldBuilder, newBuilder);
+                    files += builderFiles;
+                    bytes += builderBytes;
+                    builderCopied = true;
+                }
+            }
+
             // The bullets go last: they are the only thing written into a place that may already hold the user's data.
             if (moved.Count > 0)
             {
@@ -102,7 +128,7 @@ public static class DataRootMover
             }
 
             progress?.Report(new MoveProgress(moved.Count, apps.Count, ""));
-            return new MoveResult(moved, files, bytes, bulletsCopied);
+            return new MoveResult(moved, files, bytes, bulletsCopied, builderCopied, builderSkipped);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or OperationCanceledException or DataRootException)
         {
@@ -151,6 +177,18 @@ public static class DataRootMover
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 warnings.Add($"Could not remove the empty folder {company}: {ex.Message}");
+            }
+        }
+
+        if (result.BuilderCopied)
+        {
+            try
+            {
+                ForceDelete(ResumeBuilderFiles.Folder(oldRoot));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                warnings.Add($"Could not remove the old copy of your resume: {ex.Message}");
             }
         }
 

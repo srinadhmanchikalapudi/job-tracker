@@ -1,0 +1,225 @@
+# Skills the job-description reader recognises. One line per skill: the name shown, then the other ways it is written, separated by |.
+# An alias that starts with = must match exactly as typed (for short or everyday words like Go or Spark). Everything else ignores case.
+# Add a line to teach the app a new skill; nothing else needs to change.
+
+# Languages
+C# | CSharp | C Sharp
+C++ | CPP
+Java
+JavaScript | =JS | ECMAScript
+TypeScript | =TS
+Python
+Go | =Go | =Golang
+Rust
+Kotlin
+Swift | =Swift
+Ruby
+PHP
+Scala
+Dart
+SQL | T-SQL | TSQL | PL/SQL | PLSQL | Transact-SQL
+PowerShell
+Bash | Shell scripting
+HTML | HTML5
+CSS | CSS3 | SCSS | Sass
+GraphQL
+R programming | R language
+
+# .NET and Microsoft stack
+.NET | dotnet | .NET Core | .NET Framework | ASP.NET
+ASP.NET Core | ASP.NET MVC | ASP.NET Web API | Web API
+Entity Framework | EF Core | EntityFramework
+LINQ
+WPF
+WinForms | Windows Forms
+Blazor
+SignalR
+MAUI | Xamarin
+Dapper
+xUnit
+NUnit
+MSTest
+SSIS
+SSRS
+SSAS
+Power BI
+Power Automate
+Power Apps
+SharePoint
+Microsoft Excel | =Excel
+
+# Web and mobile
+Angular | AngularJS
+React | React.js | ReactJS
+Vue | Vue.js
+Next.js | NextJS
+Node.js | NodeJS | =Node
+Express | =Express | Express.js
+Redux
+RxJS
+jQuery
+Bootstrap
+Tailwind | Tailwind CSS
+Webpack
+Vite
+React Native
+Flutter
+Android
+iOS
+REST | RESTful | REST API | RESTful APIs
+gRPC
+SOAP
+WebSocket | WebSockets
+OAuth | OAuth2 | OAuth 2.0
+JWT | JSON Web Token
+SAML
+SSO | single sign-on
+OpenID Connect | OIDC
+Microservices | microservice | micro-services
+Event-driven | event driven | event-driven architecture
+
+# Backend frameworks and tools
+Spring Boot | =Spring | Spring Framework
+Hibernate
+Maven
+Gradle
+Django
+Flask
+FastAPI
+Rails | =Rails | Ruby on Rails
+Laravel
+NestJS
+Celery
+
+# Data
+SQL Server | MSSQL | Microsoft SQL Server
+PostgreSQL | Postgres
+MySQL
+Oracle | Oracle Database
+SQLite
+MongoDB
+Redis
+DynamoDB
+Cosmos DB | CosmosDB
+Cassandra
+Elasticsearch | OpenSearch
+Snowflake
+BigQuery
+Redshift
+Databricks
+Spark | =Spark | Apache Spark | PySpark
+Hadoop
+Airflow | Apache Airflow
+dbt
+ETL | ELT | ETL/ELT
+Data warehouse | data warehousing
+Data modeling | data modelling
+Data pipelines | data pipeline
+Kafka | Apache Kafka
+RabbitMQ
+Azure Service Bus | Service Bus
+SQS
+Kinesis
+pandas
+NumPy
+scikit-learn | sklearn
+PyTorch
+TensorFlow
+Machine learning | =ML
+Tableau
+Looker
+Query optimization | query tuning | performance tuning | SQL tuning | index tuning | indexing
+
+# Cloud and DevOps
+Azure | Microsoft Azure
+AWS | Amazon Web Services
+GCP | Google Cloud | Google Cloud Platform
+Docker | containerization | containers
+Kubernetes | K8s | AKS | EKS | GKE
+Helm
+Terraform
+Bicep
+ARM templates
+Ansible
+Pulumi
+CloudFormation
+Jenkins
+GitHub Actions
+GitLab CI
+Azure DevOps | ADO
+CircleCI
+ArgoCD
+CI/CD | CI-CD | continuous integration | continuous delivery | continuous deployment
+Infrastructure as code | IaC
+Linux
+Nginx
+IIS
+Azure Functions
+AWS Lambda | Lambda
+Serverless
+Datadog
+Splunk
+Grafana
+Prometheus
+New Relic
+OpenTelemetry
+Application Insights
+Observability
+Monitoring
+
+# Practices
+Agile
+Scrum
+Kanban
+TDD | test-driven development | test driven development
+Unit testing | unit tests
+Integration testing | integration tests
+Automated testing | test automation
+Selenium
+Cypress
+Playwright
+Jest
+pytest
+Code review | code reviews | peer review
+Pair programming
+System design | systems design | software architecture | solution architecture
+Design patterns
+Domain-driven design | DDD
+SOLID
+Clean architecture
+API design
+Technical documentation | design docs | design documents
+Mentoring | mentor | mentorship | coaching
+Technical leadership | tech lead | team lead
+Stakeholder management | stakeholders
+On-call | on call | incident response
+Root cause analysis | RCA
+Cross-functional | cross functional
+Performance optimization | performance optimisation
+Scalability | scalable systems
+High availability
+Disaster recovery
+Secure coding | security best practices
+HIPAA
+SOC 2 | SOC2
+PCI | PCI DSS
+GDPR
+SOX
+Healthcare | health care
+Insurance
+Claims
+Fintech | financial services
+E-commerce | ecommerce
+
+# Tools
+Git
+GitHub
+GitLab
+Bitbucket
+Jira
+Confluence
+Postman
+Swagger | OpenAPI
+VS Code | Visual Studio Code
+IntelliJ
+Figma

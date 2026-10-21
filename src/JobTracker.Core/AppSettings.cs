@@ -32,6 +32,23 @@ public sealed class AppSettings
     /// <summary>The version whose "What's new" the person has been shown, so each update is announced once.</summary>
     public string? LastSeenVersion { get; set; }
 
+    /// <summary>Which AI service rewrites bullets: "OpenRouter" or "Anthropic". The key itself is in Windows Credential Manager, never here.</summary>
+    public string AiProvider { get; set; } = "OpenRouter";
+
+    /// <summary>The model to ask. Blank means the default for the provider.</summary>
+    public string? AiModel { get; set; }
+
+    /// <summary>The services the person has agreed to send a resume and job description to. Each is asked once.</summary>
+    public List<string> AiConsent { get; set; } = [];
+
+    public bool HasAiConsent(string provider) => AiConsent.Contains(provider, StringComparer.OrdinalIgnoreCase);
+
+    public void GiveAiConsent(string provider)
+    {
+        if (!HasAiConsent(provider))
+            AiConsent.Add(provider);
+    }
+
     /// <summary>True when there was no settings file yet, which is a brand-new install (not saved).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsFirstRun { get; private set; }
@@ -89,6 +106,9 @@ public sealed class AppSettings
             CheckForUpdates = CheckForUpdates,
             LastUpdateCheck = LastUpdateCheck,
             LastSeenVersion = LastSeenVersion,
+            AiProvider = AiProvider,
+            AiModel = AiModel,
+            AiConsent = AiConsent,
         };
         AtomicFile.WriteJson(path ?? DefaultPath(), toSave);
     }
