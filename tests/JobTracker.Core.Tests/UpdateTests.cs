@@ -108,6 +108,108 @@ public class GitHubUpdateCheckerTests
         Assert.Contains("limiting", result.Error);
     }
 
+    // A checker whose API is limited until `reset` (and whose release web page answers as `page` says), with a clock the test controls.
+    private static (GitHubUpdateChecker Checker, FakeHandler Handler, Func<DateTimeOffset> Clock, Action<TimeSpan> Advance) Limited(
+        DateTimeOffset reset, Func<HttpResponseMessage>? page = null, bool useRetryAfter = false)
+    {
+        var now = new DateTimeOffset(2026, 10, 21, 10, 0, 0, TimeSpan.Zero);
+        var handler = new FakeHandler(request =>
+        {
+            if (request.RequestUri!.Host == "api.github.com")
+            {
+                var limited = new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{}") };
+                if (useRetryAfter)
+                    limited.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(reset - now);
+                else
+                    limited.Headers.Add("X-RateLimit-Reset", reset.ToUnixTimeSeconds().ToString());
+                return limited;
+            }
+
+            return page?.Invoke() ?? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        });
+        return (new GitHubUpdateChecker(new HttpClient(handler), "o", "r", () => now), handler, () => now, d => now += d);
+    }
+
+    private static HttpResponseMessage ReleasePage(string tag) => new(HttpStatusCode.OK)
+    {
+        Content = new StringContent("<html></html>"),
+        RequestMessage = new HttpRequestMessage(HttpMethod.Get, $"https://github.com/o/r/releases/tag/{tag}"), // where the redirect from /releases/latest ended
+    };
+
+    [Fact]
+    public async Task WhenTheApiIsLimited_ANewerReleaseIsStillFoundFromTheWebPage()
+    {
+        var (checker, handler, _, _) = Limited(new DateTimeOffset(2026, 10, 21, 11, 0, 0, TimeSpan.Zero), () => ReleasePage("v1.5.0"));
+
+        var result = await checker.CheckAsync(new Version(1, 4, 2));
+
+        Assert.Equal(UpdateStatus.Available, result.Status);
+        Assert.Equal(new Version(1, 5, 0), result.Update!.Version);
+        Assert.Equal("https://github.com/o/r/releases/tag/v1.5.0", result.Update.PageUrl);
+        Assert.Null(result.Update.InstallerUrl); // no checksum without the API, so it is downloaded from the page, not installed from inside the app
+        Assert.Null(result.Update.InstallerSha256);
+        Assert.Equal(2, handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task WhenTheApiIsLimited_TheSameVersionIsUpToDate()
+    {
+        var (checker, _, _, _) = Limited(new DateTimeOffset(2026, 10, 21, 11, 0, 0, TimeSpan.Zero), () => ReleasePage("v1.4.2"));
+        Assert.Equal(UpdateStatus.UpToDate, (await checker.CheckAsync(new Version(1, 4, 2))).Status);
+    }
+
+    [Fact]
+    public async Task WhenNothingWorks_TheMessageSaysWhenGitHubWillAllowItAgain()
+    {
+        var reset = new DateTimeOffset(2026, 10, 21, 11, 5, 0, TimeSpan.Zero);
+        var (checker, _, _, _) = Limited(reset);
+
+        var result = await checker.CheckAsync(new Version(1, 4, 2));
+
+        Assert.Equal(UpdateStatus.Failed, result.Status);
+        Assert.Contains("limiting", result.Error);
+        Assert.Contains("allow it again at " + reset.ToLocalTime().ToString("t", System.Globalization.CultureInfo.CurrentCulture), result.Error);
+    }
+
+    [Fact]
+    public async Task RetryAfterIsUnderstoodToo()
+    {
+        var reset = new DateTimeOffset(2026, 10, 21, 10, 20, 0, TimeSpan.Zero);
+        var (checker, _, _, _) = Limited(reset, useRetryAfter: true);
+
+        var result = await checker.CheckAsync(new Version(1, 4, 2));
+
+        Assert.Contains("allow it again at " + reset.ToLocalTime().ToString("t", System.Globalization.CultureInfo.CurrentCulture), result.Error);
+    }
+
+    [Fact]
+    public async Task OnceLimited_TheApiIsNotAskedAgainUntilTheTimeGitHubGave()
+    {
+        var (checker, handler, _, advance) = Limited(new DateTimeOffset(2026, 10, 21, 11, 0, 0, TimeSpan.Zero), () => ReleasePage("v1.4.2"));
+
+        await checker.CheckAsync(new Version(1, 4, 2));  // asks the API, is told no, reads the page
+        await checker.CheckAsync(new Version(1, 4, 2));  // the person clicks again: only the page
+        await checker.CheckAsync(new Version(1, 4, 2));  // and again
+        Assert.Equal(1, handler.Requests.Count(u => u.Host == "api.github.com"));
+        Assert.Equal(3, handler.Requests.Count(u => u.Host == "github.com"));
+
+        advance(TimeSpan.FromMinutes(61)); // the hour is over
+        await checker.CheckAsync(new Version(1, 4, 2));
+        Assert.Equal(2, handler.Requests.Count(u => u.Host == "api.github.com"));
+    }
+
+    [Fact]
+    public async Task ARepeatedClickWhileLimitedStillExplainsWhenItWillWork()
+    {
+        var reset = new DateTimeOffset(2026, 10, 21, 11, 0, 0, TimeSpan.Zero);
+        var (checker, _, _, _) = Limited(reset);
+
+        await checker.CheckAsync(new Version(1, 4, 2));
+        var again = await checker.CheckAsync(new Version(1, 4, 2));
+
+        Assert.Equal(UpdateStatus.Failed, again.Status);
+        Assert.Contains("allow it again at", again.Error);
+    }
     [Fact]
     public async Task ServerError_IsFailed() =>
         Assert.Equal(UpdateStatus.Failed, (await Checker(HttpStatusCode.InternalServerError).CheckAsync(new Version(1, 0, 0))).Status);
