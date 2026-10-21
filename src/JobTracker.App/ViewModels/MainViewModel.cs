@@ -212,7 +212,12 @@ public sealed partial class MainViewModel : ObservableObject
             Reload();
             SelectByFolder(created.FolderPath);
             SelectedTabIndex = 0;
-            ShowToast($"Saved to {created.FolderPath}");
+            // The resume that was just saved is the one in use, so its upload-ready Word file is made now.
+            var problem = _items.FirstOrDefault(i => string.Equals(i.App.FolderPath, created.FolderPath, StringComparison.OrdinalIgnoreCase))?.Match is { } match
+                ? match.RefreshWordFile()
+                : null;
+            Selected?.Match.Refresh();
+            ShowToast(problem is null ? $"Saved to {created.FolderPath}" : $"Saved to {created.FolderPath}. {problem}");
         });
     }
 

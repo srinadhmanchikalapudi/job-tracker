@@ -30,9 +30,21 @@ public partial class ResumePreviewWindow : Window
         Title = "Word document: " + preview.Heading;
         NoteText.Text = preview.Export.Note;
         PathBox.Text = preview.Export.Path;
-        NameText.Inlines.Add(new System.Windows.Documents.Run("Ready to upload or attach: ") { Foreground = System.Windows.Media.Brushes.Gray });
-        NameText.Inlines.Add(new System.Windows.Documents.Run(preview.SuggestedName) { FontWeight = FontWeights.SemiBold });
-        NameText.Inlines.Add(new System.Windows.Documents.Run("  Select it in the folder and press Ctrl+C, or click Copy file.") { Foreground = System.Windows.Media.Brushes.Gray });
+        if (preview.UseAsResume is null)
+        {
+            NameText.Inlines.Add(new System.Windows.Documents.Run("Ready to upload or attach: ") { Foreground = System.Windows.Media.Brushes.Gray });
+            NameText.Inlines.Add(new System.Windows.Documents.Run(preview.SuggestedName) { FontWeight = FontWeights.SemiBold });
+            NameText.Inlines.Add(new System.Windows.Documents.Run("  Select it in the folder and press Ctrl+C, or click Copy file.") { Foreground = System.Windows.Media.Brushes.Gray });
+        }
+        else
+        {
+            // A version that is not the resume in use: this file is only a look at it, kept apart so it never replaces the upload-ready file.
+            UseButton.Visibility = Visibility.Visible;
+            NameText.Inlines.Add(new System.Windows.Documents.Run("Not your resume yet. ") { FontWeight = FontWeights.SemiBold });
+            NameText.Inlines.Add(new System.Windows.Documents.Run("Click Use as my resume to make it your resume and create ") { Foreground = System.Windows.Media.Brushes.Gray });
+            NameText.Inlines.Add(new System.Windows.Documents.Run(preview.SuggestedName) { FontWeight = FontWeights.SemiBold });
+            NameText.Inlines.Add(new System.Windows.Documents.Run(" in the application's folder, replacing the one there.") { Foreground = System.Windows.Media.Brushes.Gray });
+        }
         StatusText.Text = preview.Export.Verified ? "Checked: the file says exactly what your resume says." : "";
 
         if (!preview.Export.Verified)
@@ -77,6 +89,12 @@ public partial class ResumePreviewWindow : Window
     {
         if (File.Exists(path))
             Process.Start(new ProcessStartInfo("explorer.exe") { ArgumentList = { "/select,", path } });
+    }
+
+    private void UseAsResume_Click(object sender, RoutedEventArgs e)
+    {
+        _preview.UseAsResume?.Invoke();
+        Close();
     }
 
     /// <summary>Puts the file itself on the clipboard, the same as selecting it in File Explorer and pressing Ctrl+C.</summary>

@@ -49,12 +49,14 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock x:Name="StatusText" TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="360" AutomationProperties.Name="Status" />
-                <Button x:Name="ShowCopyButton" Style="{StaticResource GhostButton}" Content="Show it" Padding="10,4" Margin="10,0,0,0" Visibility="Collapsed"
+            <DockPanel VerticalAlignment="Center" Margin="0,0,14,0">
+                <Button x:Name="ShowCopyButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="Show it" Padding="10,4" Margin="10,0,0,0" Visibility="Collapsed"
                         Click="ShowCopy_Click" />
-            </StackPanel>
+                <TextBlock x:Name="StatusText" TextWrapping="Wrap" VerticalAlignment="Center" AutomationProperties.Name="Status" />
+            </DockPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="UseButton" Style="{StaticResource PrimaryButton}" Content="Use as my resume" Padding="14,8" Margin="0,0,8,0" Visibility="Collapsed" Click="UseAsResume_Click"
+                        AutomationProperties.Name="Use as my resume" ToolTip="Make this version your resume and create the upload-ready Word file in the application's folder" />
                 <Button Style="{StaticResource GhostButton}" Content="Open file location" Padding="14,8" Click="OpenLocation_Click" AutomationProperties.Name="Open file location" />
                 <Button Style="{StaticResource GhostButton}" Content="Copy file" Padding="14,8" Margin="8,0,0,0" Click="CopyFile_Click" AutomationProperties.Name="Copy file"
                         ToolTip="Puts the file on the clipboard, like Ctrl+C in File Explorer, so you can paste it into an email or an upload box" />

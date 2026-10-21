@@ -114,6 +114,13 @@
                                     </ItemsControl>
                                 </StackPanel>
 
+                                <CheckBox IsChecked="{Binding DraftFromRole}" Margin="0,2,0,6" AutomationProperties.Name="Write bullets for the skills I ticked even if my resume does not mention them">
+                                    <TextBlock TextWrapping="Wrap" FontWeight="SemiBold"
+                                               Text="Write a bullet for each skill I tick, even if my resume says nothing about it" />
+                                </CheckBox>
+                                <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="24,0,0,8"
+                                           Text="For skills you really used in this job but never wrote down. Each bullet describes the kind of work this job involves, taken from its other bullets and the job description, with no numbers or results added. You read each one and keep it only if it is true. Leave this off and a bullet is only written where your resume already shows related work." />
+
                                 <TextBlock Text="What did you do in this job? (optional)" FontWeight="SemiBold" Margin="0,8,0,4" />
                                 <TextBox Text="{Binding Answers, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="96" Padding="8,6"
                                          VerticalScrollBarVisibility="Auto" AutomationProperties.Name="What you did" />

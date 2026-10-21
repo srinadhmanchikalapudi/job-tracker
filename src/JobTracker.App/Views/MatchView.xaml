@@ -138,7 +138,7 @@
                             </StackPanel>
                             <TextBlock Text="{Binding CurrentDetail}" Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" />
                             <TextBlock Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap">
-                                <Run Text="Word file: " /><Run Text="{Binding CurrentFileName, Mode=OneWay}" FontWeight="SemiBold" />
+                                <Run Text="Word file: " /><Run Text="{Binding CurrentFileName, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding CurrentFileState, Mode=OneWay}" />
                             </TextBlock>
                         </StackPanel>
                         <Button Grid.Column="1" Content="Word document" Style="{StaticResource GhostButton}" Padding="10,4" VerticalAlignment="Center" Click="ResumeWord_Click"

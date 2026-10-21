@@ -95,19 +95,22 @@ public sealed partial class DocumentVM(ApplicationItemVM owner, BulletSource sou
     [RelayCommand]
     private void Save()
     {
+        string? wordProblem = null;
         owner.Main.Try(() =>
         {
             if (Source == BulletSource.Jd)
                 owner.Main.Store.SaveJd(owner.App, EditText);
             else
                 owner.Main.Store.SaveResume(owner.App, EditText);
+            // An edited resume is a different resume in use: its upload-ready Word file is made again.
+            wordProblem = Source == BulletSource.Resume ? owner.Match.RefreshWordFile() : null;
             _text = EditText;
             IsEditing = false;
             Rebuild();
             if (Source == BulletSource.Jd)
                 owner.RefreshPay();
             owner.Match.Refresh(); // the skills found, and which are in the resume, depend on what was just saved
-            owner.Main.ShowToast($"Saved {Title}");
+            owner.Main.ShowToast(wordProblem is null ? $"Saved {Title}" : $"Saved {Title}. {wordProblem}");
         });
     }
 

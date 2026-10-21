@@ -3,6 +3,12 @@
 One section per version, newest first. Written for the people who use the app: they are shown inside the program (Settings, the update bar,
 and once after each update) and become the notes on the GitHub release. `tools/publish.ps1` refuses to build a version that has no section here.
 
+## 1.4.2
+
+- **Your upload-ready Word file now follows your resume by itself.** The moment you save an application, choose a resume (**Use as my resume**) or edit it, the file in the application's folder is made again, named like `Priya_Raman_Resume.docx`. If you attached a Word resume and nothing changed, it is a copy of it, renamed. When you choose a different resume, the old file is deleted and a new one is made from the one you chose, so the file in the folder always matches your resume in use. Only a file Job Tracker made is ever replaced.
+- **Previewing a version no longer disturbs that file.** A version that is not your resume yet is previewed from a `Word versions` folder, and its preview has a **Use as my resume** button.
+- **A bullet for every skill you tick.** In **Add new bullets**, turn on **Write a bullet for each skill I tick, even if my resume says nothing about it**. Each ticked skill gets a bullet describing the kind of work the job involves, taken from its other bullets and the job description. No numbers, results, names or other tools are added, and the window tells you to read each one and keep it only if it is true. If a skill still gets no bullet, the window says which and why.
+- The Match tab shows whether the Word file for your resume in use is ready.
 ## 1.4.1
 
 - **A warning when you paste the same job twice.** A company can have many roles, so a new job at the same company saves as usual. But if the job description is 70% or more the same as one you already saved for that company, you are asked first. A window shows both descriptions side by side with the lines that are only in one of them highlighted. Go back (nothing you typed is lost), save it anyway if it is a different role, or open the one you already have.

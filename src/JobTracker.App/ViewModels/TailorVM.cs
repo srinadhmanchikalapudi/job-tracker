@@ -281,12 +281,22 @@ public sealed partial class TailorVM : ObservableObject
     public bool CanGenerateNew => HasJob && !IsBusy;
     public bool HasNewRejected => NewRejectedSummary.Length > 0;
     public bool HasNewNote => NewNote.Length > 0;
+    /// <summary>
+    /// "Write a bullet for every skill I ticked, from the kind of work this job involves, even if my resume says nothing about it." Off by default: the
+    /// person is saying they really used each ticked skill, and the bullets are drafts for them to check.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AnswersHint))]
+    private bool _draftFromRole;
+
     public string AnswersHint =>
         Answers.Trim().Length > 0 && !AnswerCheck.SkillsOnly(Answers, out _)
             ? "New bullets will be written from what you typed here and from this job's bullets."
-            : Answers.Trim().Length > 0 || NewMissingSkills.Any(s => s.IsPicked)
-                ? "Skill only: each bullet will tie it to work this job's bullets already describe, and add nothing else. Check it is true before you add it."
-                : "Nothing typed: new bullets will only restate what this job's bullets already say, in a different way.";
+            : DraftFromRole && (Answers.Trim().Length > 0 || NewMissingSkills.Concat(NewSkills).Any(s => s.IsPicked))
+                ? "Drafting from the role: each ticked skill gets a bullet about the kind of work this job involves, with no numbers or results added. Check each is true before you add it."
+                : Answers.Trim().Length > 0 || NewMissingSkills.Any(s => s.IsPicked)
+                    ? "Skill only: each bullet will tie it to work this job's bullets already describe, and add nothing else. Check it is true before you add it."
+                    : "Nothing typed: new bullets will only restate what this job's bullets already say, in a different way.";
 
     partial void OnNewRejectedSummaryChanged(string value) => OnPropertyChanged(nameof(HasNewRejected));
     partial void OnNewNoteChanged(string value) => OnPropertyChanged(nameof(HasNewNote));
@@ -534,8 +544,12 @@ public sealed partial class TailorVM : ObservableObject
                 picked.Add(skill);
         }
 
+        // With "write bullets for the skills I ticked", every ticked skill is a claim, including the ones the resume already says.
+        if (DraftFromRole)
+            foreach (var skill in picked.Where(p => !claims.Any(c => string.Equals(c.Skill, p, StringComparison.OrdinalIgnoreCase))).ToList())
+                claims.Add(new AttestedSkill { Skill = skill, Note = "" });
+
         var answers = typedSkills.Count > 0 ? "" : Answers; // the typed words were the skills, not an account of what was done
-        var withoutDetails = claims.Where(c => c.Note.Trim().Length == 0).Select(c => c.Skill).ToList();
 
         // Something too short to write from, that is not a skill either ("banana"): say so before asking anyone anything.
         if (AnswerCheck.IsTooThin(Answers) && claims.Count == 0)
@@ -553,8 +567,9 @@ public sealed partial class TailorVM : ObservableObject
             return;
         }
 
-        var request = new NewBulletsRequest(job.Job, Session.Text, _jdText, Company, picked, claims, answers);
-        _claimedWithoutDetails = withoutDetails;
+        var request = new NewBulletsRequest(job.Job, Session.Text, _jdText, Company, picked, claims, answers, DraftFromRole);
+        _claimedWithoutDetails = claims.Where(c => c.Note.Trim().Length == 0).Select(c => c.Skill).ToList();
+        _draftedFromRole = request.DraftsFromRole;
 
         NewOptions.Clear();
         NewRejectedSummary = "";
@@ -565,6 +580,7 @@ public sealed partial class TailorVM : ObservableObject
 
     // The skills the current request claims without details, so the result can say how its bullets were made.
     private List<string> _claimedWithoutDetails = [];
+    private bool _draftedFromRole;
 
     public void ShowNewResult(NewBulletsResult result)
     {
@@ -574,15 +590,25 @@ public sealed partial class TailorVM : ObservableObject
 
         NewRejectedSummary = Dropped(result.Rejected);
         var skills = string.Join(", ", _claimedWithoutDetails);
+        // A skill that got no bullet at all, so the person is not left wondering why only some of the ticked ones appear.
+        var withoutBullet = _claimedWithoutDetails
+            .Where(s => !result.Options.Any(o => o.Text.Contains(s, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
         NewNote = result.Options.Count == 0 ? ""
+            : _draftedFromRole
+                ? $"You ticked ({skills}) but did not say what you did with them, so each bullet describes the kind of work this job involves, taken from its other bullets and the job description, with no numbers or results added. I cannot know that is what you did: read each one and add it only if it is true."
             : _claimedWithoutDetails.Count > 0
                 ? $"You gave the skill ({skills}) but not what you did with it, so each bullet ties it to work this job's bullets already describe, and adds nothing else. I cannot know that is how you used it: read each one and add it only if it is true."
                 : result.DraftedWithoutAnswers
                     ? "You gave no details, so these only restate what this job already says. Read each one and add it only if it is true and worth a line of its own."
                     : "";
         HasNewResult = true;
-        NewStatus = result.Options.Count > 0
+        NewStatus = result.Options.Count > 0 && _draftedFromRole && withoutBullet.Count > 0
+            ? $"{result.Options.Count} new bullet{(result.Options.Count == 1 ? "" : "s")} passed the checks. None passed for {string.Join(", ", withoutBullet)}: see why below, or say what you did with it in the box and try again."
+            : result.Options.Count > 0
             ? $"{result.Options.Count} new bullet{(result.Options.Count == 1 ? "" : "s")} passed the checks."
+            : _draftedFromRole
+                ? $"Nothing could be written for {skills} without adding something you did not say. Type what you did with it in a sentence, and try again."
             : _claimedWithoutDetails.Count > 0
                 ? $"Nothing honest could be tied to this job's existing bullets. Say what you did with {skills} in a sentence, and try again."
                 : result.DraftedWithoutAnswers

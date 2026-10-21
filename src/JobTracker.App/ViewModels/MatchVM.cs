@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JobTracker.Core.Export;
@@ -86,6 +87,7 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
     /// <summary>The resume in use, shown at the top of the versions: what it is, how it scores, and the name its Word file will have.</summary>
     [ObservableProperty] private string _currentDetail = "";
     [ObservableProperty] private string _currentFileName = "";
+    [ObservableProperty] private string _currentFileState = "";
     [ObservableProperty] private bool _hasCurrent;
 
     public ApplicationItemVM Owner => owner;
@@ -135,6 +137,9 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
             HasVersions = Versions.Count > 0;
             HasCurrent = current.Trim().Length > 0;
             CurrentFileName = HasCurrent ? DownloadNames.Suggest(current) : "";
+            CurrentFileState = !HasCurrent ? "" : CurrentResumeWord.ExistingPath(owner.App) is { } made && Path.GetFileName(made) == CurrentFileName
+                ? " (ready in this application's folder)"
+                : " (not made yet: click Word document)";
             var same = Versions.FirstOrDefault(v => v.IsCurrent);
             var scoreText = _report.CoreTotal > 0 ? $" {Percent}% ({_report.CoreInResume} of {_report.CoreTotal} key skills)." : "";
             CurrentDetail = !HasCurrent ? "" : (same is not null ? $"Same as {same.Name}." : "The resume you pasted or attached.") + scoreText;
@@ -219,9 +224,37 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
     public WordPreview? PrepareWordPreview(ResumeVersion? version)
     {
         var main = owner.Main;
-        var folder = owner.App.FolderPath;
-        var text = version is null ? main.Store.ReadResume(owner.App) : ResumeVersions.Read(version);
-        return WordPreviews.Make(main, folder, text, version is null ? "Your resume as it is now" : $"Version {version.Number} of your resume");
+        var current = main.Store.ReadResume(owner.App);
+        var text = version is null ? current : ResumeVersions.Read(version);
+
+        // The resume in use (or a version that says exactly the same) is the upload-ready file. Any other version is only previewed, in its own place,
+        // so it can never replace the file of the resume in use; the preview offers to make it the resume.
+        if (version is null || text.Trim() == current.Trim())
+            return WordPreviews.MakeCurrent(main, owner.App, version is null ? "Your resume as it is now" : $"Version {version.Number} of your resume (the one in use)");
+
+        return WordPreviews.Make(main, owner.App.FolderPath, text, $"Version {version.Number} of your resume",
+            Path.Combine("Word versions", DownloadNames.ForVersion(text, version.Number)), () => UseAsResume(version));
+    }
+
+    /// <summary>
+    /// Makes the upload-ready Word file for the resume in use, replacing the old one. Returns a sentence to tell the person when it could not be
+    /// made (the old file is open in Word), otherwise null. Call it whenever the resume in use changes.
+    /// </summary>
+    public string? RefreshWordFile()
+    {
+        try
+        {
+            CurrentResumeWord.Refresh(owner.Main.Store, owner.App);
+            return null;
+        }
+        catch (IOException)
+        {
+            return $"{DownloadNames.Suggest(owner.Main.Store.ReadResume(owner.App))} is open in another program, so it was not updated. Close it there, then click Word document";
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return "Could not write the Word file: " + ex.Message;
+        }
     }
 
     public void UseAsResume(ResumeVersion version)
@@ -230,8 +263,10 @@ public sealed partial class MatchVM(ApplicationItemVM owner) : ObservableObject
         {
             var backup = ResumeVersions.UseAsResume(owner.App.FolderPath, version);
             owner.Resume.Load();
+            var problem = RefreshWordFile(); // the upload-ready file now follows the resume that was just chosen
             Refresh();
-            owner.Main.ShowToast(backup is null ? $"Version {version.Number} is now your resume" : $"Version {version.Number} is now your resume. The old one is kept as {backup.FileName}");
+            var said = backup is null ? $"Version {version.Number} is now your resume" : $"Version {version.Number} is now your resume. The old one is kept as {backup.FileName}";
+            owner.Main.ShowToast(problem is null ? $"{said}. {CurrentFileName} is ready in its folder" : $"{said}. {problem}");
         });
     }
 }
