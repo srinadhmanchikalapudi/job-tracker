@@ -244,6 +244,69 @@
                 <Setter Property="Background" Value="#26A855F7" />
                 <Setter Property="BorderBrush" Value="#66A855F7" />
             </Style>
+            <Style x:Key="SkillChipPartial" TargetType="Border" BasedOn="{StaticResource SkillChip}">
+                <Setter Property="Background" Value="#2638BDF8" />
+                <Setter Property="BorderBrush" Value="#6638BDF8" />
+            </Style>
+
+            <!-- The label of a chip is a button, so a click on it opens the requirement's detail; it looks like plain text. -->
+            <Style x:Key="ChipLabelButton" TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- One requirement on the coverage map: green when matched, blue when partly, purple when only claimed, red when missing. The selected one has a bright edge. -->
+            <Style x:Key="MapCell" TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Margin" Value="0,0,6,6" />
+                <Setter Property="Padding" Value="9,4" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome" CornerRadius="7" BorderThickness="1" Padding="{TemplateBinding Padding}" Background="#26EF4444" BorderBrush="#66EF4444">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsCovered}" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#2616A34A" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="#6616A34A" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsPartial}" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#2638BDF8" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="#6638BDF8" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsAttested}" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#26A855F7" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="#66A855F7" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentSolid}" />
+                                    <Setter TargetName="Chrome" Property="BorderThickness" Value="2" />
+                                </DataTrigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentSolid}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <SolidColorBrush x:Key="RiskHighBrush" Color="#EF4444" />
+            <SolidColorBrush x:Key="RiskMediumBrush" Color="#F59E0B" />
+            <SolidColorBrush x:Key="RiskLowBrush" Color="#60A5FA" />
+            <SolidColorBrush x:Key="GainBrush" Color="#16A34A" />
+            <SolidColorBrush x:Key="LossBrush" Color="#EF4444" />
+
             <Style x:Key="SkillChipCovered" TargetType="Border" BasedOn="{StaticResource SkillChip}">
                 <Setter Property="Padding" Value="12,5" />
                 <Setter Property="Background" Value="#2616A34A" />

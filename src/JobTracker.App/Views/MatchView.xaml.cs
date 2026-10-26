@@ -8,15 +8,45 @@ public partial class MatchView : UserControl
 {
     public MatchView() => InitializeComponent();
 
+    // "I've used it" on a chip: the skill comes from the chip.
     private void MarkUsed_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is not MatchVM match || (sender as FrameworkElement)?.DataContext is not TermVM term)
+        if (DataContext is MatchVM match && (sender as FrameworkElement)?.DataContext is TermVM term)
+            Confirm(match, term.Skill);
+    }
+
+    // "I've used it" in the detail panel: the skill is the one that was clicked.
+    private void DetailConfirm_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MatchVM { Selected: { } term } match)
+            Confirm(match, term.Skill);
+    }
+
+    private void Confirm(MatchVM match, string skill)
+    {
+        var dialog = new SkillNoteWindow(skill) { Owner = Window.GetWindow(this) };
+        if (dialog.ShowDialog() == true)
+            match.Attest(skill, dialog.Note);
+    }
+
+    // "Write a bullet…": opens the Improve window ready for this one requirement. Nothing is sent until the person clicks Write new bullets there.
+    private void DetailWrite_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MatchVM { Selected: { } term } match)
             return;
 
-        var dialog = new SkillNoteWindow(term.Skill) { Owner = Window.GetWindow(this) };
-        if (dialog.ShowDialog() == true)
-            match.Attest(term.Skill, dialog.Note);
+        var tailor = new TailorVM(match);
+        tailor.PrepareForSkill(term.Skill);
+        new TailorWindow(tailor) { Owner = Window.GetWindow(this) }.ShowDialog();
     }
+
+    private void DetailUndo_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MatchVM { Selected: { } term })
+            term.UndoCommand.Execute(null);
+    }
+
+    private void CloseDetail_Click(object sender, RoutedEventArgs e) => (DataContext as MatchVM)?.CloseDetailCommand.Execute(null);
 
     private void Improve_Click(object sender, RoutedEventArgs e)
     {
@@ -37,5 +67,4 @@ public partial class MatchView : UserControl
         if (preview is not null)
             new ResumePreviewWindow(preview) { Owner = Window.GetWindow(this) }.ShowDialog();
     }
-
 }

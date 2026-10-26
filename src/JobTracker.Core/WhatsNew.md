@@ -3,6 +3,18 @@
 One section per version, newest first. Written for the people who use the app: they are shown inside the program (Settings, the update bar,
 and once after each update) and become the notes on the GitHub release. `tools/publish.ps1` refuses to build a version that has no section here.
 
+## 1.5.0
+
+- **The Match tab now explains its score, like an ATS consultant.** You get one **Overall Match** with bars for Skill, Cloud, Architecture, Experience, Leadership and Domain, and a **WHY** card that shows the points your resume gains and loses, adding up exactly to the score. It is no longer a plain count of keywords: missing ASP.NET Core costs far more than missing RabbitMQ.
+- **The kind of job matters.** The score is weighted for a .NET, Full Stack, Azure, Cloud/DevOps, AI, Data or Software Engineer job, picked from the job title (you can change it). Azure Functions counts for more than Terraform on a .NET job, and the other way round on a cloud job.
+- **Close wording counts, but only partly.** "Serverless applications on Azure" is a **partial match** for Azure Functions, "CI/CD workflows" for GitHub Actions, "SQL performance tuning" for query optimization, and ".NET Core Web API" is a strong match for ASP.NET Core. Each requirement is Strong, Partial, Claimed or Missing, and it says which words it recognised.
+- **See the evidence.** Click any requirement, on the new **coverage map** or in the lists, to see the exact lines of your resume that match it, or what is close to it. A skill that only sits in a skills list counts for a little less than one you used at work, and repeating a keyword earns nothing extra.
+- **Years of experience and job title count too.** Years are counted from the dates of your jobs (overlaps counted once), and your titles are compared with the job's title.
+- **ATS insights panel.** See your **ATS risks** ranked High, Medium and Low, and the **top keywords missing**.
+- **A helper for gaps, that never invents anything.** Each gap says where the case for adding it comes from: **USER CONFIRMED** (you said you used it), **SYSTEM INFERRED** (related work is already in your resume) or **JOB DESCRIPTION ONLY**. Say you used it, click **Write a bullet…**, and you get a bullet you can edit before it is added; an edit is checked again. Nothing is ever written about a technology you have not confirmed.
+- **Score history.** See how the match moved from one saved version of your resume to the next, and which changes moved it. Saved versions also show the score they would give.
+- "18 of 35 job requirements matched" replaces "key skills", because many requirements (mentoring, event-driven design, stakeholder work) are not skills. Because the score is now weighted, it will not match the old percentage.
+- "Mentored" and "coached" are now recognised as mentoring, and more AI, data and Azure requirements are recognised.
 ## 1.4.3
 
 - **Checking for updates no longer gets stuck when GitHub says "limiting requests".** GitHub only lets a program without an account ask about 60 times an hour. When that is used up, Job Tracker now finds the newest version from the release page instead, and stops asking until GitHub allows it, so clicking **Check for updates now** again and again does no harm. If nothing works, the message says when to try again. An update found this way opens its download page instead of installing from inside the app.

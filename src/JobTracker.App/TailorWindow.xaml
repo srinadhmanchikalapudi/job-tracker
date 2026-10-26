@@ -107,6 +107,8 @@
                                                         <TextBlock Text="{Binding Skill}" />
                                                         <TextBlock Text="{Binding Tag}" Opacity="0.65" FontSize="11" Margin="6,2,0,0" VerticalAlignment="Center"
                                                                    Visibility="{Binding HasTag, Converter={StaticResource BoolToVis}}" />
+                                                        <TextBlock Text="{Binding SourceText, StringFormat=· {0}}" Opacity="0.65" FontSize="11" Margin="4,2,0,0" VerticalAlignment="Center"
+                                                                   Visibility="{Binding HasSource, Converter={StaticResource BoolToVis}}" />
                                                     </StackPanel>
                                                 </ToggleButton>
                                             </DataTemplate>
@@ -148,9 +150,14 @@
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel>
-                                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                                        <!-- Editable: change the wording before adding it. An edit is checked again by the same rules. -->
+                                                        <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="False" BorderThickness="0"
+                                                                 Background="Transparent" Padding="0" AutomationProperties.Name="New bullet text (you can edit it)"
+                                                                 ToolTip="You can edit this before you add it. An edit is checked again: it cannot add a number, name or tool you did not give." />
                                                         <TextBlock Text="{Binding Note}" Style="{StaticResource SubtleText}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
                                                                    Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
+                                                        <TextBlock Text="Edited. It is checked again when you add it." Style="{StaticResource SubtleText}" FontSize="12" Margin="0,4,0,0"
+                                                                   Visibility="{Binding IsEdited, Converter={StaticResource BoolToVis}}" />
                                                     </StackPanel>
                                                     <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="Add to this job" Command="{Binding AddCommand}" Padding="14,6"
                                                             Margin="14,0,0,0" VerticalAlignment="Top" />

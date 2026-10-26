@@ -21,8 +21,31 @@ public sealed partial class BulletRowVM(ResumeBullet bullet, bool isChanged, boo
 }
 
 /// <summary>A skill from the job description that a rewrite could speak to. Only skills the resume says, or the person has claimed, are offered.</summary>
-public sealed partial class SkillPickVM(string skill, bool isClaimedOnly, bool isMissing = false, string tag = "", string evidence = "") : ObservableObject
+public sealed partial class SkillPickVM(string skill, bool isClaimedOnly, bool isMissing = false, string tag = "", string evidence = "", RewriteSource? source = null) : ObservableObject
 {
+    /// <summary>
+    /// Where the case for writing about this comes from: you confirmed it, related work is already in the resume, or only the job description asks for it.
+    /// Ticking a keyword is the person confirming they used it; nothing is written about a keyword that is not ticked.
+    /// </summary>
+    public string SourceText => source switch
+    {
+        RewriteSource.UserConfirmed => "you confirmed it",
+        RewriteSource.SystemInferred => "related work found",
+        RewriteSource.JobDescriptionOnly => "job description only",
+        _ => "",
+    };
+
+    /// <summary>The label used everywhere for where the case for writing about it comes from.</summary>
+    public string SourceLabel => source switch
+    {
+        RewriteSource.UserConfirmed => "USER CONFIRMED",
+        RewriteSource.SystemInferred => "SYSTEM INFERRED",
+        RewriteSource.JobDescriptionOnly => "JOB DESCRIPTION ONLY",
+        _ => "",
+    };
+
+    public bool HasSource => SourceText.Length > 0;
+
     public string Skill { get; } = skill;
     public bool IsClaimedOnly { get; } = isClaimedOnly;
 
@@ -35,7 +58,7 @@ public sealed partial class SkillPickVM(string skill, bool isClaimedOnly, bool i
     public bool HasTag => Tag.Length > 0;
 
     public string Tooltip => IsMissing
-        ? "Not in your resume. Pick it only if you really used it in this job." + (HasTag ? $" The job description marks it {Tag}." : "") + (evidence.Length > 0 ? $"\nJob description: {evidence}" : "")
+        ? "Not in your resume. Pick it only if you really used it in this job." + (HasTag ? $" The job description marks it {Tag}." : "") + (HasSource ? $"\nSource: {SourceLabel} ({SourceText}). Ticking it is you confirming you used it." : "") + (evidence.Length > 0 ? $"\nJob description: {evidence}" : "")
         : IsClaimedOnly ? "You said you have used this. It is used only in the way your note describes." : "Already in your resume.";
 
     [ObservableProperty] private bool _isPicked;
@@ -74,12 +97,32 @@ public sealed partial class JobOptionVM(JobBulletOption option) : ObservableObje
 
 public sealed partial class NewOptionVM(NewBulletOption option, TailorVM owner) : ObservableObject
 {
-    public string Text => option.Text;
+    /// <summary>The bullet, as the person wants it. It starts as the suggestion and can be edited; an edit is checked again before it is added.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEdited))]
+    private string _text = option.Text;
+
+    /// <summary>The suggestion as it was made, so the list can tell which one was added after it has been edited.</summary>
+    public string Original => option.Text;
+
+    public bool IsEdited => Text.Trim() != option.Text;
     public string Note => option.Note;
     public bool HasNote => option.Note.Length > 0;
 
     [RelayCommand]
-    private void Add() => owner.AddBullet(option);
+    private void Add()
+    {
+        var text = Text.Trim();
+        if (text.Length == 0)
+            return;
+        if (IsEdited && owner.ProblemsWithEdit(text) is { Count: > 0 } problems)
+        {
+            owner.NewStatus = "That edit cannot be added: " + string.Join(" ", problems) + " Change it, or use the suggestion as it was.";
+            return;
+        }
+
+        owner.AddBullet(IsEdited ? option with { Text = text } : option, replaces: option.Text);
+    }
 }
 
 /// <summary>
@@ -121,14 +164,16 @@ public sealed partial class TailorVM : ObservableObject
     private void RefreshKeywords()
     {
         var report = ResumeMatcher.Match(JdAnalyzer.Analyze(_jdText), Session.Text, _match.State);
-        var usable = report.Matches.Where(m => m.Status != MatchStatus.Missing).ToList();
-        var missing = report.Matches.Where(m => m.Status == MatchStatus.Missing).ToList();
+        // Only what the resume says, or the person claimed, is "usable". Related wording (a partial match) is not the skill: it is offered for confirmation like a missing one.
+        var usable = report.Matches.Where(m => m.Status is MatchStatus.InResume or MatchStatus.Attested).ToList();
+        var missing = report.Matches.Where(m => m.Status is MatchStatus.Missing or MatchStatus.Partial).ToList();
 
         Sync(Skills, usable.Select(m => new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested)));
         Sync(JobSkills, usable.Select(m => new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested)));
         Sync(NewSkills, usable.Select(m => new SkillPickVM(m.Term.Skill, m.Status == MatchStatus.Attested)));
         Sync(NewMissingSkills, missing.Select(m => new SkillPickVM(m.Term.Skill, false, isMissing: true,
-            tag: m.Term.Weight switch { TermWeight.Required => "required", TermWeight.Preferred => "nice to have", _ => "" }, evidence: m.Term.Evidence)));
+            tag: m.Term.Weight switch { TermWeight.Required => "required", TermWeight.Preferred => "nice to have", _ => "" }, evidence: m.Term.Evidence,
+            source: AtsScorer.SourceOf(m))));
         foreach (var skill in NewSkills.Concat(NewMissingSkills))
             skill.PropertyChanged += (_, _) => OnPropertyChanged(nameof(AnswersHint));
         OnPropertyChanged(nameof(HasSkills));
@@ -568,6 +613,7 @@ public sealed partial class TailorVM : ObservableObject
         }
 
         var request = new NewBulletsRequest(job.Job, Session.Text, _jdText, Company, picked, claims, answers, DraftFromRole);
+        _lastNewRequest = request;
         _claimedWithoutDetails = claims.Where(c => c.Note.Trim().Length == 0).Select(c => c.Skill).ToList();
         _draftedFromRole = request.DraftsFromRole;
 
@@ -576,6 +622,28 @@ public sealed partial class TailorVM : ObservableObject
         NewNote = "";
         HasNewResult = false;
         await AskAsync(ct => new JobBulletWriter(model).NewBulletsAsync(request, ct), s => NewStatus = s, ShowNewResult, $"Asking {model.Provider}…");
+    }
+
+    // The last request sent for new bullets, so a bullet the person edits can be checked by exactly the rules the suggestions passed.
+    private NewBulletsRequest? _lastNewRequest;
+
+    /// <summary>What is wrong with an edited new bullet (empty when it is fine): a number, name, tool or role it was not given.</summary>
+    public IReadOnlyList<string> ProblemsWithEdit(string text) =>
+        _lastNewRequest is { } request ? JobBulletWriter.ProblemsWithNewBullet(request, text) : [];
+
+    /// <summary>
+    /// Gets the Add new bullets tab ready for one requirement the person has said they used: the job its related work is in, the skill ticked, and the
+    /// role-based draft turned on when they gave no details. Nothing is sent until they click Write new bullets.
+    /// </summary>
+    public void PrepareForSkill(string skill)
+    {
+        var found = _match.Report.Find(skill);
+        var lines = found is null ? [] : found.Match.EvidenceLines.Concat(found.Match.RelatedLines).Select(e => e.Text.Trim()).ToList();
+        if (Jobs.FirstOrDefault(j => j.Job.Bullets.Any(b => lines.Contains(b.Text.Trim(), StringComparer.OrdinalIgnoreCase))) is { } job)
+            SelectedJob = job;
+        foreach (var chip in NewSkills.Concat(NewMissingSkills).Where(c => string.Equals(c.Skill, skill, StringComparison.OrdinalIgnoreCase)))
+            chip.IsPicked = true;
+        DraftFromRole = found?.Match.Note is not { Length: > 0 };
     }
 
     // The skills the current request claims without details, so the result can say how its bullets were made.
@@ -616,13 +684,14 @@ public sealed partial class TailorVM : ObservableObject
                     : "None of the suggestions passed the checks. Try again with more detail.";
     }
 
-    public void AddBullet(NewBulletOption option)
+    public void AddBullet(NewBulletOption option, string? replaces = null)
     {
         if (SelectedJob is not { } job)
             return;
         var index = SelectedJobIndex;
         var line = Session.InsertAfter(job.Job.LastLine, option.Text);
-        var remaining = NewOptions.Where(o => o.Text != option.Text).ToList();
+        var added = replaces ?? option.Text; // the suggestion this bullet came from, which may have been edited since
+        var remaining = NewOptions.Where(o => o.Original != added).ToList();
 
         Rebuild(selectLine: line, index);
         foreach (var o in remaining)
