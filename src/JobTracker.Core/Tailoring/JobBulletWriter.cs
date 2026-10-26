@@ -184,12 +184,24 @@ public sealed class JobBulletWriter(IChatModel model, SkillLexicon? lexicon = nu
         return new JobRewriteResult(options, rejected);
     }
 
-    public NewBulletsResult CheckNew(NewBulletsRequest request, IEnumerable<(string Text, IReadOnlyList<string> Uses, string Note)> proposed)
+    private static (BulletContext Context, List<string> Facts) NewBulletContext(NewBulletsRequest request)
     {
         var facts = BulletRewriter.Facts(request.Claimed, request.Answers);
         var existing = request.Job.Bullets.Select(b => b.Text).ToList();
-        var context = new BulletContext(string.Join("\n", existing), facts, request.ResumeText, request.Claimed.Select(c => c.Skill).ToList(),
-            request.TargetCompany, existing, NoNewResults: request.DraftsFromRole);
+        return (new BulletContext(string.Join("\n", existing), facts, request.ResumeText, request.Claimed.Select(c => c.Skill).ToList(),
+            request.TargetCompany, existing, NoNewResults: request.DraftsFromRole), facts);
+    }
+
+    /// <summary>
+    /// What is wrong with a new bullet the person has edited, by the same checks a model's bullet passes (an edit may not add a number, a name, a tool they
+    /// have not claimed or a bigger role either). Empty when it is fine.
+    /// </summary>
+    public static IReadOnlyList<string> ProblemsWithNewBullet(NewBulletsRequest request, string text, SkillLexicon? lexicon = null) =>
+        BulletVerifier.Verify(text, NewBulletContext(request).Context, lexicon ?? SkillLexicon.Default);
+
+    public NewBulletsResult CheckNew(NewBulletsRequest request, IEnumerable<(string Text, IReadOnlyList<string> Uses, string Note)> proposed)
+    {
+        var (context, facts) = NewBulletContext(request);
 
         var options = new List<NewBulletOption>();
         var rejected = new List<RejectedOption>();

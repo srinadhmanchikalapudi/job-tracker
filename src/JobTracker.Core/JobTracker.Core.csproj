@@ -9,6 +9,7 @@
   <ItemGroup>
     <EmbeddedResource Include="WhatsNew.md" />
     <EmbeddedResource Include="Tailoring\skills.txt" />
+    <EmbeddedResource Include="Tailoring\relations.txt" />
   </ItemGroup>
 
   <ItemGroup>

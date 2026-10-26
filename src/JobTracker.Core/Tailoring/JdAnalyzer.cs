@@ -20,8 +20,13 @@ public enum TermWeight
 /// <param name="Evidence">The first line of the job description that mentions it, so the person can see why it is listed.</param>
 public sealed record JdTerm(string Skill, TermWeight Weight, int Count, string Evidence);
 
-public sealed record JdAnalysis(IReadOnlyList<JdTerm> Terms)
+/// <param name="Terms">The requirements found, strongest first.</param>
+/// <param name="RequiredYears">The most years of experience any line of the job description asks for ("8+ years"), or null when it names none.</param>
+/// <param name="LeadershipLines">Lines that ask the person to lead, mentor or manage, so leadership can be weighed even where no catalogue entry names it.</param>
+public sealed record JdAnalysis(IReadOnlyList<JdTerm> Terms, double? RequiredYears = null, IReadOnlyList<string>? LeadershipLines = null)
 {
+    public IReadOnlyList<string> Leadership => LeadershipLines ?? [];
+
     public IEnumerable<JdTerm> Core => Terms.Where(t => t.Weight != TermWeight.Preferred);
     public IEnumerable<JdTerm> Preferred => Terms.Where(t => t.Weight == TermWeight.Preferred);
 }
@@ -45,6 +50,13 @@ public static class JdAnalyzer
     private static readonly Regex IgnoredHeading = new(@"about (?:us|the company)|who we are|benefit|perk|compensation|salary|pay |equal opportunity|eeo|how to apply|our (?:values|culture|mission)|why join|why you.ll love",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // "6+ years", "5-8 years", "3 yrs"; not "years ago" (company history) and not a salary or a contract length.
+    private static readonly Regex YearsAsked = new(@"(?<![\d$./])(?<n>\d{1,2})\s*\+?\s*(?:(?:-|to)\s*\d{1,2}\s*\+?\s*)?(?:years?|yrs?)\b(?!\s+(?:ago|old|of age))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex LeadershipAsked = new(
+        @"\b(?:lead(?:ing)?\s+(?:a|an|the|our|and|teams?|engineers?|developers?|projects?|initiatives?|design|architecture|technical)|team\s*lead|tech(?:nical)?\s*lead|mentor\w*|coach\w*|manage\s+(?:a\s+)?(?:team|engineers|people|developers)|leadership|guid(?:e|ing)\s+(?:junior|engineers|developers|the team)|drive\s+(?:technical|architecture|best practices))\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private static readonly Regex RequiredLine = new(@"\b(?:required|requires|must[- ]have|must|minimum|\d+\s*\+?\s*years?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex PreferredLine = new(@"\b(?:preferred|nice to have|a plus|bonus|ideally|familiarity with|exposure to|is a plus|are a plus)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -54,6 +66,8 @@ public static class JdAnalyzer
         var found = new Dictionary<string, (TermWeight Weight, int Count, string Evidence, int Order)>(StringComparer.OrdinalIgnoreCase);
         var current = TermWeight.Duty;
         var ignoring = false;
+        double? years = null;
+        var leadership = new List<string>();
 
         foreach (var line in BulletText.Structure(jdText))
         {
@@ -66,6 +80,17 @@ public static class JdAnalyzer
 
             if (ignoring)
                 continue;
+
+            // Years and leadership are read from every line that counts (not the company blurb or the benefits).
+            foreach (Match y in YearsAsked.Matches(line.Display))
+            {
+                var asked = double.Parse(y.Groups["n"].Value);
+                if (asked is >= 1 and <= 30)
+                    years = Math.Max(years ?? 0, asked);
+            }
+
+            if (LeadershipAsked.IsMatch(line.Display))
+                leadership.Add(line.Display);
 
             var weight = current;
             if (PreferredLine.IsMatch(line.Display))
@@ -89,7 +114,7 @@ public static class JdAnalyzer
             .ThenBy(kv => kv.Value.Order)
             .Select(kv => new JdTerm(lexicon.Canonical(kv.Key) ?? kv.Key, kv.Value.Weight, kv.Value.Count, kv.Value.Evidence))
             .ToList();
-        return new JdAnalysis(terms);
+        return new JdAnalysis(terms, years, leadership);
     }
 
     private static (bool Ignoring, TermWeight Weight) Classify(string heading, TermWeight current, bool ignoring)

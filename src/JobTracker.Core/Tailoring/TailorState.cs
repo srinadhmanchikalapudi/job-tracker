@@ -16,6 +16,9 @@ public sealed class TailorState
 
     public List<AttestedSkill> Attested { get; set; } = [];
 
+    /// <summary>The kind of job to score for (a <see cref="RoleProfile.Id"/>) when the person overrode the one detected from the job title; null means detect it.</summary>
+    public string? RoleId { get; set; }
+
     /// <summary>Skills the person marked "not relevant", so they stop counting as missing.</summary>
     public List<string> Dismissed { get; set; } = [];
 

@@ -1,8 +1,9 @@
-# Skills the job-description reader recognises. One line per skill: the name shown, then the other ways it is written, separated by |.
+# Skills and requirements the job-description reader recognises. One line per entry: the name shown, then the other ways it is written, separated by |.
 # An alias that starts with = must match exactly as typed (for short or everyday words like Go or Spark). Everything else ignores case.
-# Add a line to teach the app a new skill; nothing else needs to change.
+# A line like [Cloud] starts a category: every entry below it belongs to that category until the next [Category] line. The category decides which
+# part of the score an entry belongs to, and where it sits on the coverage map. Add a line to teach the app a new entry; nothing else needs to change.
 
-# Languages
+[Language]
 C# | CSharp | C Sharp
 C++ | CPP
 Java
@@ -22,12 +23,11 @@ PowerShell
 Bash | Shell scripting
 HTML | HTML5
 CSS | CSS3 | SCSS | Sass
-GraphQL
 R programming | R language
 
-# .NET and Microsoft stack
+[Framework]
 .NET | dotnet | .NET Core | .NET Framework | ASP.NET
-ASP.NET Core | ASP.NET MVC | ASP.NET Web API | Web API
+ASP.NET Core | ASP.NET MVC | ASP.NET Web API | Web API | .NET Core Web API | .NET Core API | .NET Core MVC
 Entity Framework | EF Core | EntityFramework
 LINQ
 WPF
@@ -36,19 +36,17 @@ Blazor
 SignalR
 MAUI | Xamarin
 Dapper
-xUnit
-NUnit
-MSTest
-SSIS
-SSRS
-SSAS
-Power BI
-Power Automate
-Power Apps
-SharePoint
-Microsoft Excel | =Excel
+Spring Boot | =Spring | Spring Framework
+Hibernate
+Django
+Flask
+FastAPI
+Rails | =Rails | Ruby on Rails
+Laravel
+NestJS
+Celery
 
-# Web and mobile
+[Web]
 Angular | AngularJS
 React | React.js | ReactJS
 Vue | Vue.js
@@ -66,7 +64,10 @@ React Native
 Flutter
 Android
 iOS
+
+[Architecture]
 REST | RESTful | REST API | RESTful APIs
+GraphQL
 gRPC
 SOAP
 WebSocket | WebSockets
@@ -77,21 +78,28 @@ SSO | single sign-on
 OpenID Connect | OIDC
 Microservices | microservice | micro-services
 Event-driven | event driven | event-driven architecture
+CQRS
+Event sourcing | event-sourced
+Message queues | message queue | messaging
+Pub/Sub | publish/subscribe
+API gateway
+Distributed systems
+System design | systems design | software architecture | solution architecture
+Design patterns
+Domain-driven design | DDD
+SOLID
+Clean architecture
+API design
+Scalability | scalable systems
+High availability
+Disaster recovery
+Kafka | Apache Kafka
+RabbitMQ
+Azure Service Bus | Service Bus
+SQS
+Kinesis
 
-# Backend frameworks and tools
-Spring Boot | =Spring | Spring Framework
-Hibernate
-Maven
-Gradle
-Django
-Flask
-FastAPI
-Rails | =Rails | Ruby on Rails
-Laravel
-NestJS
-Celery
-
-# Data
+[Data]
 SQL Server | MSSQL | Microsoft SQL Server
 PostgreSQL | Postgres
 MySQL
@@ -113,28 +121,59 @@ Airflow | Apache Airflow
 dbt
 ETL | ELT | ETL/ELT
 Data warehouse | data warehousing
+Data lake | data lakehouse | lakehouse
 Data modeling | data modelling
 Data pipelines | data pipeline
-Kafka | Apache Kafka
-RabbitMQ
-Azure Service Bus | Service Bus
-SQS
-Kinesis
+Azure Data Factory | ADF
+Synapse | Azure Synapse
+Delta Lake
+SSIS
+SSRS
+SSAS
+Power BI
+Tableau
+Looker
+Query optimization | query optimisation | query tuning | SQL tuning | index tuning
+
+[AI]
+Machine learning | =ML
+Artificial intelligence | =AI
+Generative AI | GenAI
+LLM | LLMs | large language models
+OpenAI | Azure OpenAI | GPT
+RAG | retrieval-augmented generation
+LangChain
+Semantic Kernel
+Prompt engineering
+NLP | natural language processing
+Computer vision
+Hugging Face
+MLOps
+Vector database | vector databases | embeddings
 pandas
 NumPy
 scikit-learn | sklearn
 PyTorch
 TensorFlow
-Machine learning | =ML
-Tableau
-Looker
-Query optimization | query tuning | performance tuning | SQL tuning | index tuning | indexing
 
-# Cloud and DevOps
+[Cloud]
 Azure | Microsoft Azure
 AWS | Amazon Web Services
 GCP | Google Cloud | Google Cloud Platform
-Docker | containerization | containers
+Azure Functions | Durable Functions | Function Apps
+AWS Lambda | Lambda
+Serverless
+Azure App Service | App Services | Azure Web Apps
+Azure Key Vault | Key Vault
+Azure SQL | Azure SQL Database
+Azure Blob Storage | Blob Storage
+Azure Event Hubs | Event Hubs
+Azure Logic Apps | Logic Apps
+Azure AD | Entra ID | Azure Active Directory
+Cloud-native | cloud native | cloud computing | cloud platforms
+
+[DevOps]
+Docker | containerization | containers | Docker Compose
 Kubernetes | K8s | AKS | EKS | GKE
 Helm
 Terraform
@@ -146,7 +185,7 @@ CloudFormation
 Jenkins
 GitHub Actions
 GitLab CI
-Azure DevOps | ADO
+Azure DevOps | ADO | Azure Pipelines | VSTS
 CircleCI
 ArgoCD
 CI/CD | CI-CD | continuous integration | continuous delivery | continuous deployment
@@ -154,9 +193,6 @@ Infrastructure as code | IaC
 Linux
 Nginx
 IIS
-Azure Functions
-AWS Lambda | Lambda
-Serverless
 Datadog
 Splunk
 Grafana
@@ -167,39 +203,39 @@ Application Insights
 Observability
 Monitoring
 
-# Practices
-Agile
-Scrum
-Kanban
+[Testing]
 TDD | test-driven development | test driven development
 Unit testing | unit tests
 Integration testing | integration tests
 Automated testing | test automation
+xUnit
+NUnit
+MSTest
 Selenium
 Cypress
 Playwright
 Jest
 pytest
+
+[Practice]
+Agile
+Scrum
+Kanban
 Code review | code reviews | peer review
 Pair programming
-System design | systems design | software architecture | solution architecture
-Design patterns
-Domain-driven design | DDD
-SOLID
-Clean architecture
-API design
 Technical documentation | design docs | design documents
-Mentoring | mentor | mentorship | coaching
-Technical leadership | tech lead | team lead
-Stakeholder management | stakeholders
 On-call | on call | incident response
 Root cause analysis | RCA
-Cross-functional | cross functional
 Performance optimization | performance optimisation
-Scalability | scalable systems
-High availability
-Disaster recovery
 Secure coding | security best practices
+
+[Leadership]
+Mentoring | mentor | mentored | mentorship | coaching | coached
+Technical leadership | tech lead | team lead
+Stakeholder management | stakeholders
+Cross-functional | cross functional
+
+[Domain]
 HIPAA
 SOC 2 | SOC2
 PCI | PCI DSS
@@ -211,7 +247,7 @@ Claims
 Fintech | financial services
 E-commerce | ecommerce
 
-# Tools
+[Tool]
 Git
 GitHub
 GitLab
@@ -223,3 +259,9 @@ Swagger | OpenAPI
 VS Code | Visual Studio Code
 IntelliJ
 Figma
+Maven
+Gradle
+SharePoint
+Microsoft Excel | =Excel
+Power Automate
+Power Apps

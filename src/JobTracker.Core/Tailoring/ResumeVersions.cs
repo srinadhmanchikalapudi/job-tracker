@@ -48,9 +48,12 @@ public static class ResumeVersions
         if (current == chosen)
             return null;
 
+        var resumeWrittenAt = File.Exists(resumePath) ? File.GetLastWriteTime(resumePath) : DateTime.Now;
         var backup = current.Trim().Length > 0 && !List(applicationFolder).Any(v => Read(v) == current)
             ? SaveNew(applicationFolder, current)
             : null;
+        if (backup is not null)
+            File.SetLastWriteTime(backup.Path, resumeWrittenAt); // the backup is the old resume, so it keeps the old resume's date: the history stays in the order things happened
         AtomicFile.WriteAllText(resumePath, chosen);
         return backup;
     }

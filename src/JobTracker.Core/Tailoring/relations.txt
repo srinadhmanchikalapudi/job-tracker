@@ -1,0 +1,180 @@
+# How one requirement can be evidenced by wording that is not its name. One rule per line:
+#   Target :: strong|partial|related: alternative ; alternative ; ...
+# An alternative is one or more things joined with " + ", all of which must be on the same resume line. A thing is either a skill name from
+# skills.txt (with all its spellings) or a "quoted phrase" (ignores case; a trailing * lets the word go on: "claim*").
+#   strong  - saying this means the person has done the target (Terraform is infrastructure as code). Counts almost fully.
+#   partial - closely related wording ("serverless" on Azure for Azure Functions). Counts half, and is shown as a partial match.
+#   related - adjacent work worth pointing out ("App Service" for Azure Functions). Never scored; it is shown as potential evidence only.
+# Nothing here ever puts a skill into a resume. These rules only decide how the existing resume is read.
+
+# ---- Cloud
+Azure Functions :: partial: Serverless + Azure ; "function app" ; "serverless functions" + Azure ; "event-triggered" + Azure ; "timer trigger" ; "queue trigger"
+Azure Functions :: related: Azure App Service ; "event processing" ; Event-driven ; "background processing" ; "background jobs" ; "background workers" ; Azure Service Bus ; Azure Event Hubs ; Azure Logic Apps ; "message-driven"
+AWS Lambda :: partial: Serverless + AWS ; "serverless functions" + AWS
+AWS Lambda :: related: SQS ; Kinesis ; "event processing" ; Event-driven
+Serverless :: strong: Azure Functions ; AWS Lambda ; "Cloud Functions" ; "Cloud Run"
+Serverless :: related: Event-driven ; "event processing"
+Azure App Service :: partial: "web apps" + Azure ; "app service plan"
+Azure App Service :: related: Azure + "deploy*" ; Azure + "hosted"
+Azure Key Vault :: partial: "secrets management" ; "secret management" ; "key management" + Azure
+Azure SQL :: partial: SQL Server + Azure ; "managed SQL"
+Azure SQL :: related: SQL Server
+Azure AD :: partial: OAuth + Azure ; OpenID Connect + Azure ; "Microsoft Identity"
+Azure Event Hubs :: related: Kafka ; Azure Service Bus
+Azure Logic Apps :: related: Power Automate ; "workflow automation"
+Azure Service Bus :: partial: Message queues + Azure
+Azure Service Bus :: related: RabbitMQ ; Message queues
+Cloud-native :: strong: Azure ; AWS ; GCP
+Cloud-native :: partial: Kubernetes ; Serverless ; Docker + "microservice*"
+Azure :: related: AWS ; GCP
+AWS :: related: Azure ; GCP
+GCP :: related: AWS ; Azure
+
+# ---- DevOps
+GitHub Actions :: partial: CI/CD ; "build pipeline" ; "deployment pipeline" ; GitHub + "pipeline*" ; GitHub + "workflow*"
+GitHub Actions :: related: Jenkins ; Azure DevOps ; GitLab CI ; CircleCI
+Jenkins :: partial: CI/CD ; "build pipeline"
+Jenkins :: related: GitHub Actions ; Azure DevOps ; GitLab CI ; CircleCI
+GitLab CI :: partial: CI/CD ; GitLab + "pipeline*"
+CircleCI :: partial: CI/CD
+Azure DevOps :: partial: CI/CD + Azure ; "release pipeline" ; "build pipeline" + Azure
+ArgoCD :: partial: "GitOps" ; Kubernetes + CI/CD
+CI/CD :: strong: GitHub Actions ; Jenkins ; GitLab CI ; CircleCI ; Azure DevOps ; ArgoCD ; "build pipeline" ; "deployment pipeline" ; "release pipeline"
+Infrastructure as code :: strong: Terraform ; Bicep ; ARM templates ; CloudFormation ; Ansible ; Pulumi
+Terraform :: partial: Infrastructure as code ; Bicep ; ARM templates ; CloudFormation ; Pulumi
+Bicep :: partial: Infrastructure as code ; Terraform ; ARM templates
+ARM templates :: partial: Infrastructure as code ; Bicep
+Ansible :: partial: "configuration management"
+Kubernetes :: partial: "container orchestration" ; Helm ; "orchestrat*" + Docker
+Kubernetes :: related: Docker
+Docker :: partial: Kubernetes ; "Dockerfile*" ; "container images"
+Helm :: related: Kubernetes
+Monitoring :: strong: Datadog ; Grafana ; Prometheus ; New Relic ; Application Insights ; Splunk
+Observability :: partial: Datadog ; Grafana ; Prometheus ; New Relic ; Application Insights ; OpenTelemetry ; Splunk ; Monitoring ; "logging" + "tracing"
+Datadog :: partial: Monitoring + "dashboard*" ; Observability ; "APM"
+Splunk :: partial: "log aggregation" ; "log analysis" ; "centralized logging"
+Grafana :: partial: Monitoring + "dashboard*" ; Prometheus
+Prometheus :: partial: Monitoring + Kubernetes
+Linux :: partial: Bash ; "Unix" ; "Ubuntu" ; "Red Hat"
+
+# ---- Architecture and APIs
+Microservices :: partial: "service-oriented" ; "service oriented" ; "SOA" ; "independently deployable" ; "distributed services" ; "domain services" ; API gateway
+Microservices :: related: Distributed systems ; Kubernetes + Docker ; "monolith*"
+Event-driven :: partial: Kafka ; RabbitMQ ; Azure Service Bus ; SQS ; Kinesis ; Azure Event Hubs ; Message queues ; Pub/Sub ; "event processing" ; "event-based" ; "message-driven" ; "event bus" ; CQRS ; Event sourcing
+Message queues :: strong: RabbitMQ ; Azure Service Bus ; SQS
+Message queues :: partial: Kafka ; Pub/Sub ; "queue*"
+Kafka :: partial: "event streaming" ; "stream processing" ; Azure Event Hubs
+Kafka :: related: RabbitMQ ; Azure Service Bus ; Message queues ; Event-driven
+RabbitMQ :: partial: Message queues ; "message broker*" ; Azure Service Bus
+RabbitMQ :: related: Kafka ; Event-driven
+REST :: partial: ASP.NET Core ; "HTTP API*" ; "web services" ; API design ; "API development"
+REST :: related: GraphQL ; gRPC ; SOAP
+GraphQL :: partial: API design
+GraphQL :: related: REST
+gRPC :: related: REST ; "protobuf"
+OAuth :: partial: JWT ; OpenID Connect ; Azure AD ; "token-based" ; "access token*" ; "identity provider*"
+OpenID Connect :: partial: OAuth ; SSO ; Azure AD
+SSO :: partial: SAML ; OpenID Connect ; Azure AD
+JWT :: partial: OAuth ; "token-based authentication"
+SAML :: partial: SSO
+System design :: partial: Microservices ; Design patterns ; Domain-driven design ; Clean architecture ; "architected" ; "architecture" ; Distributed systems
+API design :: partial: REST ; GraphQL ; gRPC ; Swagger ; "API" + "design*"
+Domain-driven design :: partial: CQRS ; "bounded context*" ; Clean architecture
+Clean architecture :: partial: SOLID ; "onion architecture" ; "hexagonal"
+Design patterns :: partial: SOLID ; "repository pattern" ; "factory pattern" ; Clean architecture ; Domain-driven design
+Scalability :: partial: "high-throughput" ; "high throughput" ; "high-volume" ; "high volume" ; "high-traffic" ; "load balanc*" ; "horizontal scaling" ; "auto-scal*"
+High availability :: partial: "failover" ; "fault-tolerant" ; "fault tolerant" ; "redundan*"
+Disaster recovery :: partial: "backup*" + "restor*" ; "failover"
+Distributed systems :: partial: Microservices ; Kafka ; "distributed" ; "eventual consistency"
+CQRS :: partial: Event sourcing ; "command" + "query" + "separation"
+
+# ---- Data
+SQL :: strong: PostgreSQL ; MySQL ; Oracle ; SQLite ; Azure SQL
+SQL Server :: partial: SQL ; Azure SQL
+SQL Server :: related: PostgreSQL ; MySQL ; Oracle
+PostgreSQL :: partial: "relational database*"
+PostgreSQL :: related: SQL Server ; MySQL ; Oracle ; SQL
+MongoDB :: partial: "NoSQL" ; Cosmos DB ; "document database*"
+MongoDB :: related: Cosmos DB ; DynamoDB ; Redis
+Cosmos DB :: partial: "NoSQL" ; MongoDB
+Redis :: partial: "distributed cache" ; "in-memory cache" ; "caching layer" ; "memcached"
+Redis :: related: "cach*"
+Query optimization :: partial: "performance tuning" ; "query performance" ; "slow quer*" ; "execution plan*" ; "indexing" ; "index*" + SQL ; Performance optimization + SQL
+Data pipelines :: partial: ETL ; Airflow ; Azure Data Factory ; Kafka + "stream*" ; Databricks ; SSIS ; "data ingestion"
+ETL :: strong: SSIS ; Azure Data Factory
+ETL :: partial: Data pipelines ; Airflow ; dbt ; "data transformation"
+Data warehouse :: strong: Snowflake ; BigQuery ; Redshift ; Synapse
+Data warehouse :: partial: SSAS ; "star schema" ; "data mart*"
+Data lake :: strong: Delta Lake
+Data lake :: partial: Databricks ; "Azure Data Lake" ; "S3" + "analytics"
+Data modeling :: partial: "schema design" ; "database design" ; "normaliz*" ; "star schema" ; "ER diagram*"
+Spark :: partial: Databricks ; "distributed processing" ; Hadoop
+Databricks :: partial: Spark ; Delta Lake
+Snowflake :: related: BigQuery ; Redshift ; Synapse ; Data warehouse
+Power BI :: partial: Tableau ; Looker ; "BI dashboard*"
+Tableau :: partial: Power BI ; Looker
+
+# ---- AI
+Machine learning :: strong: TensorFlow ; PyTorch ; scikit-learn ; "model training"
+Machine learning :: partial: "predictive model*" ; "data science" ; NumPy + pandas ; MLOps
+LLM :: partial: OpenAI ; LangChain ; Semantic Kernel ; Hugging Face ; Prompt engineering ; RAG ; Generative AI
+OpenAI :: partial: LLM ; Generative AI ; LangChain ; Semantic Kernel
+RAG :: partial: Vector database ; "semantic search" ; LangChain
+Vector database :: partial: "Pinecone" ; "pgvector" ; "FAISS" ; Elasticsearch + "embedding*"
+Generative AI :: strong: LLM ; OpenAI ; LangChain ; Semantic Kernel ; "ChatGPT"
+Prompt engineering :: partial: LLM ; OpenAI ; Generative AI
+Artificial intelligence :: strong: Machine learning ; LLM ; Generative AI ; NLP ; Computer vision ; OpenAI
+NLP :: partial: LLM ; "text classification" ; "sentiment analysis" ; Hugging Face
+MLOps :: partial: "model deployment" ; "model serving" ; Kubernetes + Machine learning
+Computer vision :: partial: "image classification" ; "object detection" ; "OpenCV"
+
+# ---- Practices and testing
+Unit testing :: strong: xUnit ; NUnit ; MSTest ; Jest ; pytest ; TDD ; "JUnit"
+Unit testing :: partial: "test coverage" ; "code coverage"
+Integration testing :: partial: "API testing" ; "end-to-end test*" ; Postman
+Automated testing :: strong: Selenium ; Cypress ; Playwright
+Automated testing :: partial: xUnit ; NUnit ; MSTest ; Jest ; pytest ; Unit testing ; Integration testing ; "test script*"
+TDD :: partial: Unit testing + "first"
+Code review :: partial: "pull request*" ; "merge request*"
+Agile :: strong: Scrum ; Kanban ; "sprint*"
+Scrum :: partial: Agile + "sprint*" ; "sprint*"
+Kanban :: partial: Agile
+Performance optimization :: partial: Query optimization ; "performance tuning" ; "latency" ; "optimiz*" + "performance"
+Root cause analysis :: partial: "troubleshoot*" ; "debugg*" ; "post-mortem*" ; "postmortem*" ; "incident*" + "investigat*"
+On-call :: partial: "incident*" ; "production support" ; "24/7" ; "pager*"
+Secure coding :: partial: OAuth ; "OWASP" ; "vulnerabilit*" ; "encryption" ; "security" + "review*"
+Technical documentation :: partial: "documented" ; "documentation" ; Swagger
+Pair programming :: partial: "mob programming" ; "pairing"
+
+# ---- Leadership
+Mentoring :: partial: "onboard*" ; "trained" + "junior*" ; "trained" + "engineers" ; "guided" + "junior*" ; "knowledge sharing" ; "knowledge transfer" ; "code review*" + "junior*"
+Technical leadership :: partial: "led a team" ; "led the" ; "led a" ; "lead developer" ; "lead engineer" ; "team of" ; "technical direction" ; "architectural decisions" ; "spearhead*"
+Stakeholder management :: partial: "business users" ; "business stakeholders" ; "client-facing" ; "client facing" ; "requirements gathering" ; "product owner*" ; "product manager*" ; "business analyst*"
+Cross-functional :: partial: "product manager*" ; "product owner*" ; "designers" ; "worked closely with" ; "across teams" ; "cross-team" ; "collaborat*" + "teams"
+
+# ---- Domain
+Healthcare :: partial: HIPAA ; "clinical" ; "patient*" ; "EHR" ; "HL7" ; "FHIR" ; "medical"
+Insurance :: partial: Claims ; "underwriting" ; "actuarial" ; "premium*" ; "policy admin*"
+Claims :: partial: Insurance ; "adjudication" ; "claim*"
+Fintech :: partial: "banking" ; "payments" ; "financial" ; "trading" ; "lending" ; PCI ; SOX
+E-commerce :: partial: "retail" ; "shopping cart" ; "checkout" ; "online store" ; "marketplace"
+HIPAA :: partial: Healthcare + "complian*" ; "PHI" ; "protected health information"
+GDPR :: partial: "data privacy" ; "privacy" + "complian*" ; "PII"
+SOC 2 :: partial: "audit*" + "complian*" ; "security complian*"
+PCI :: partial: "payment*" + "complian*" ; "cardholder"
+SOX :: partial: "audit*" + "financial" ; "internal controls"
+
+# ---- Web, languages and tools
+React :: strong: Next.js
+React :: partial: React Native ; Redux
+Angular :: partial: RxJS ; "NgRx"
+Node.js :: strong: Express ; NestJS
+JavaScript :: strong: TypeScript ; Node.js ; React ; Angular ; Vue ; jQuery
+TypeScript :: related: JavaScript ; Angular
+Entity Framework :: partial: Dapper ; "ADO.NET" ; "ORM"
+.NET :: strong: ASP.NET Core ; Entity Framework ; Blazor ; WPF ; WinForms ; MAUI ; SignalR ; LINQ ; Dapper ; "NuGet"
+ASP.NET Core :: partial: .NET + "Web API" ; .NET + "MVC" ; Blazor
+Java :: strong: Spring Boot ; Hibernate
+Python :: strong: Django ; Flask ; FastAPI ; pandas ; NumPy ; pytest
+Git :: strong: GitHub ; GitLab ; Bitbucket
+Swagger :: partial: "API documentation"

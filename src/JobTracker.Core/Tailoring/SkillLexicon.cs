@@ -16,16 +16,26 @@ public sealed class SkillLexicon
     private sealed record Entry(string Skill, Regex Pattern);
 
     private readonly List<Entry> _entries = [];
+    private readonly Dictionary<string, Entry> _byName = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, SkillCategory> _categories = new(StringComparer.OrdinalIgnoreCase);
 
     public static SkillLexicon Default { get; } = new(LoadEmbedded());
 
     public SkillLexicon(IEnumerable<string> lines)
     {
+        var category = SkillCategory.Other;
         foreach (var raw in lines)
         {
             var line = raw.Trim();
             if (line.Length == 0 || line[0] == '#')
                 continue;
+
+            // [Cloud] starts a category; the entries below it belong to it.
+            if (line[0] == '[' && line[^1] == ']')
+            {
+                category = Enum.TryParse<SkillCategory>(line[1..^1].Trim(), ignoreCase: true, out var parsed) ? parsed : SkillCategory.Other;
+                continue;
+            }
 
             var parts = line.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             var skill = parts[0].TrimStart('=');
@@ -34,9 +44,15 @@ public sealed class SkillLexicon
             if (!aliases.Contains("=" + skill, StringComparer.Ordinal))
                 aliases.Insert(0, skill);
 
-            _entries.Add(new Entry(skill, BuildPattern(aliases)));
+            var entry = new Entry(skill, BuildPattern(aliases));
+            _entries.Add(entry);
+            _byName[skill] = entry;
+            _categories[skill] = category;
         }
     }
+
+    /// <summary>What kind of requirement the entry is (cloud, architecture, leadership…), from its [Category] in skills.txt.</summary>
+    public SkillCategory CategoryOf(string skill) => _categories.TryGetValue(skill, out var c) ? c : SkillCategory.Other;
 
     public IReadOnlyList<string> Skills => _entries.Select(e => e.Skill).ToList();
 
@@ -65,10 +81,9 @@ public sealed class SkillLexicon
     }
 
     public bool Contains(string text, string skill) =>
-        _entries.FirstOrDefault(e => string.Equals(e.Skill, skill, StringComparison.OrdinalIgnoreCase)) is { } entry && entry.Pattern.IsMatch(text);
+        _byName.TryGetValue(skill, out var entry) && entry.Pattern.IsMatch(text);
 
-    public string? Canonical(string name) =>
-        _entries.FirstOrDefault(e => string.Equals(e.Skill, name, StringComparison.OrdinalIgnoreCase))?.Skill;
+    public string? Canonical(string name) => _byName.TryGetValue(name, out var entry) ? entry.Skill : null;
 
     private static Regex BuildPattern(List<string> aliases)
     {

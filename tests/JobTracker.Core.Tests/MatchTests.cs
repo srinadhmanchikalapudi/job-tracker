@@ -256,9 +256,13 @@ public class NestedSkillTests
     }
 
     [Fact]
-    public void AResumeSayingOnlySqlDoesNotCoverSqlServer()
+    public void AResumeSayingOnlySqlIsOnlyAPartialMatchForSqlServer()
     {
         var r = ResumeMatcher.Match(JdAnalyzer.Analyze("## Requirements\n- SQL Server\n"), "- Wrote SQL reports\n");
-        Assert.Equal(MatchStatus.Missing, r.Matches.Single(m => m.Term.Skill == "SQL Server").Status);
+        var match = r.Matches.Single(m => m.Term.Skill == "SQL Server");
+
+        Assert.Equal(MatchStatus.Partial, match.Status); // generic SQL is related to SQL Server, but it is not SQL Server
+        Assert.Equal(["Wrote SQL reports"], match.EvidenceLines.Select(e => e.Text).ToArray());
+        Assert.Equal(0, r.CoreInResume); // and the strict count still does not claim it
     }
 }
